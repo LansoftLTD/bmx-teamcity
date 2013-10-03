@@ -15,8 +15,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         "Gets an artifact from a TeamCity server.",
         "TeamCity", 
         DefaultToLocalServer = true)]
-    [RequiresInterface(typeof(IFileOperationsExecuter))]
-    [RequiresInterface(typeof(IRemoteZip))]
     [CustomEditor(typeof(GetArtifactActionEditor))]
     public sealed class GetArtifactAction : TeamCityActionBase
     {
@@ -78,51 +76,40 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             string relativeUrl = string.Format("repository/download/{0}/{1}/{2}", this.BuildConfigurationId, this.BuildNumber, this.ArtifactName);
 
-            LogDebug("Downloading TeamCity artifact \"{0}\" from {1} to {2}", this.ArtifactName, GetExtensionConfigurer().BaseUrl + relativeUrl, this.RemoteConfiguration.TargetDirectory);
+            LogDebug("Downloading TeamCity artifact \"{0}\" from {1} to {2}", this.ArtifactName, GetExtensionConfigurer().BaseUrl + relativeUrl, this.Context.TargetDirectory);
 
-            using (var agent = (IFileOperationsExecuter)Util.Agents.CreateAgentFromId(this.ServerId))
+            var fileOps = this.Context.Agent.GetService<IFileOperationsExecuter>();
+            var remoteZip = this.Context.Agent.GetService<IRemoteZip>();
+
+            string tempFile;
+            using (var client = CreateClient())
             {
-                string tempFile;
-                using (var client = CreateClient())
-                {
-                    tempFile = Path.GetTempFileName();
-                    client.DownloadFile(relativeUrl, tempFile);
-                }
-
-                if (this.ExtractFilesToTargetDirectory)
-                {
-                    LogDebug("Transferring artifact to {0} before extracting...", this.RemoteConfiguration.TempDirectory);
-                    string remoteTempPath = agent.CombinePath(this.RemoteConfiguration.TempDirectory, this.ArtifactName);
-                    agent.WriteFile(
-                        remoteTempPath,
-                        null,
-                        null,
-                        File.ReadAllBytes(tempFile),
-                        false
-                    );
-
-                    LogDebug("Extracting TeamCity artifact to {0}...", this.RemoteConfiguration.TargetDirectory);
-                    ((IRemoteZip)agent).ExtractZipFile(remoteTempPath, this.RemoteConfiguration.TargetDirectory, true);
-                }
-                else
-                {
-                    LogDebug("Transferring artifact to {0}...", this.RemoteConfiguration.TargetDirectory);
-                    agent.WriteFile(
-                        agent.CombinePath(this.RemoteConfiguration.TargetDirectory, this.ArtifactName),
-                        null,
-                        null,
-                        File.ReadAllBytes(tempFile),
-                        false
-                    );
-                }
-                
-                LogInformation("Artifact retrieved successfully.");
+                tempFile = Path.GetTempFileName();
+                client.DownloadFile(relativeUrl, tempFile);
             }
-        }
 
-        protected override string ProcessRemoteCommand(string name, string[] args)
-        {
-            throw new InvalidOperationException();
+            if (this.ExtractFilesToTargetDirectory)
+            {
+                LogDebug("Transferring artifact to {0} before extracting...", this.Context.TempDirectory);
+                string remoteTempPath = fileOps.CombinePath(this.Context.TempDirectory, this.ArtifactName);
+                fileOps.WriteFileBytes(
+                    remoteTempPath,
+                    File.ReadAllBytes(tempFile)
+                );
+
+                LogDebug("Extracting TeamCity artifact to {0}...", this.Context.TargetDirectory);
+                remoteZip.ExtractZipFile(remoteTempPath, this.Context.TargetDirectory, true);
+            }
+            else
+            {
+                LogDebug("Transferring artifact to {0}...", this.Context.TargetDirectory);
+                fileOps.WriteFileBytes(
+                    fileOps.CombinePath(this.Context.TargetDirectory, this.ArtifactName),
+                    File.ReadAllBytes(tempFile)
+                );
+            }
+
+            LogInformation("Artifact retrieved successfully.");
         }
     }
 }

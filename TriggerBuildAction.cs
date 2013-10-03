@@ -116,11 +116,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             }
         }
 
-        protected override string ProcessRemoteCommand(string name, string[] args)
-        {
-            throw new InvalidOperationException();
-        }
-
         private static string ParseBuildId(string getBuildResponse)
         {
             #region XML Format...
