@@ -1,6 +1,8 @@
-﻿using Inedo.BuildMaster;
+﻿using System.Linq;
+using Inedo.BuildMaster;
 using Inedo.BuildMaster.Extensibility.Configurers.Extension;
 using Inedo.BuildMaster.Web;
+using Inedo.BuildMaster.Data;
 
 [assembly: ExtensionConfigurer(typeof(Inedo.BuildMasterExtensions.TeamCity.TeamCityConfigurer))]
 
@@ -9,6 +11,24 @@ namespace Inedo.BuildMasterExtensions.TeamCity
     [CustomEditor(typeof(TeamCityConfigurerEditor))]
     public sealed class TeamCityConfigurer : ExtensionConfigurerBase
     {
+        internal static TeamCityConfigurer GetConfigurer(string profileName = null)
+        {
+            var typ = typeof(TeamCityConfigurer);
+
+            var profiles = StoredProcs
+                .ExtensionConfiguration_GetConfigurations(typ.FullName + "," + typ.Assembly.GetName().Name)
+                .Execute();
+            //throw new System.Exception(typ.FullName + "," + typ.Assembly.GetName().Name);
+            var configurer =
+                profiles.FirstOrDefault(p => string.Equals(profileName, p.Profile_Name, System.StringComparison.OrdinalIgnoreCase))
+                ??
+                profiles.FirstOrDefault(p => p.Default_Indicator.Equals(Domains.YN.Yes));
+
+            if (configurer == null) return null;
+
+            return (TeamCityConfigurer)Util.Persistence.DeserializeFromPersistedObjectXml(configurer.Extension_Configuration);
+        }
+
         /// <summary>
         /// Gets or sets the server URL without the form of authentication included in the URL.
         /// </summary>

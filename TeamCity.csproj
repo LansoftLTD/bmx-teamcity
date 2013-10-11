@@ -47,6 +47,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -73,13 +74,24 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SelectBuildConfigurationPicker.cs" />
+    <Compile Include="DeployTeamCityBuildRecipeEditor.cs">
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="DeployTeamCityBuildRecipe.cs" />
     <Compile Include="GetArtifactAction.cs" />
     <Compile Include="GetArtifactActionEditor.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SelectBuildConfigurationVariable.cs" />
+    <Compile Include="SelectBuildConfigurationVariableEditor.cs">
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="SelectBuildConfigurationVariableSetter.cs" />
     <Compile Include="TeamCityActionBase.cs" />
     <Compile Include="TeamCityConfigurer.cs" />
     <Compile Include="TeamCityConfigurerEditor.cs">
@@ -95,8 +107,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
+    <PostBuildEvent>if exist $(SolutionDir) cmd /c "del $(SolutionDir)..\..\BuildMaster-4.0.0\ExtensionsLib\$(TargetName).bmx"
+if exist $(SolutionDir) $(SolutionDir)..\zip -j $(SolutionDir)..\..\BuildMaster-4.0.0\ExtensionsLib\$(TargetName).bmx *.*</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

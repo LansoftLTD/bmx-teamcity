@@ -11,6 +11,11 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             return (TeamCityConfigurer)base.GetExtensionConfigurer();
         }
 
+        public sealed override bool IsConfigurerSettingRequired()
+        {
+            return true;
+        }
+
         protected WebClient CreateClient()
         {
             var configurer = GetExtensionConfigurer();
