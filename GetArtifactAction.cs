@@ -13,7 +13,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
     [ActionProperties(
         "Get TeamCity Artifact",
         "Gets an artifact from a TeamCity server.",
-        "TeamCity", 
+        "TeamCity",
         DefaultToLocalServer = true)]
     [CustomEditor(typeof(GetArtifactActionEditor))]
     public sealed class GetArtifactAction : TeamCityActionBase

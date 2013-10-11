@@ -15,12 +15,13 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public SelectBuildConfigurationPicker()
         {
             this.OptionGroupSeparator = ":";
+            this.AllowNew = true;
         }
 
         internal void FillItems(string configurationProfileName)
         {
             var configurer = TeamCityConfigurer.GetConfigurer(InedoLib.Util.NullIf(configurationProfileName, string.Empty));
-            if (configurer == null) throw new InvalidOperationException("The specified configuration profile was not found, and there was no default.");
+            if (configurer == null) return;
 
             using (var client = new WebClient())
             {

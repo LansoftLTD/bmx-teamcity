@@ -111,28 +111,35 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         }
         private void CreateTeamCityConnectionControls()
         {
-            var configurer = TeamCityConfigurer.GetConfigurer(null);
+            var defaultCfg = TeamCityConfigurer.GetConfigurer(null) ?? new TeamCityConfigurer();
+            var ctlError = new InfoBox { BoxType = InfoBox.InfoBoxTypes.Error, Visible = false };
 
             var txtServerUrl = new ValidatingTextBox
             {
                 Required = true,
-                Text = configurer == null ? null : configurer.ServerUrl,
+                Text = defaultCfg.ServerUrl,
                 Width = 350
             };
             
             var txtUsername = new ValidatingTextBox
             {
-                Text = configurer == null ? null : configurer.Username,
+                Text = defaultCfg.Username,
                 Width = 350
             };
             var txtPassword = new PasswordTextBox
             {
-                Text = configurer == null ? null : configurer.Password,
+                Text = defaultCfg.Password,
                 Width = 350
             };
 
             txtServerUrl.ServerValidate += (s, e) =>
                 {
+                    var configurer = new TeamCityConfigurer
+                    {
+                        ServerUrl = txtServerUrl.Text,
+                        Username = txtUsername.Text,
+                        Password = txtPassword.Text
+                    };
                     try
                     {
                         using (var client = new WebClient())
@@ -147,11 +154,13 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                     catch (Exception _e)
                     {
                         e.IsValid = false;
-                        txtServerUrl.ValidatorText = _e.Message;
+                        ctlError.Visible = true;
+                        ctlError.Controls.Add(new P("An error occurred while attempting to connect: " + _e.Message));
                     }
                 };
 
             this.wizardSteps.TeamCityConnection.Controls.Add(
+                ctlError,
                 new FormFieldGroup(
                     "TeamCity Server URL",
                     "Enter the URL of the TeamCity server, typically: http://teamcityserver",
@@ -169,8 +178,24 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.WizardStepChange += (s, e) =>
             {
                 if (e.CurrentStep != this.wizardSteps.TeamCityConnection) return;
-                //this.BuildConfigurationId = ctlSelectBuildConfigurationPicker.SelectedValue;
-                //this.ArtifactName = txtArtifactName.Text;
+
+                defaultCfg.ServerUrl = txtServerUrl.Text;
+                defaultCfg.Username = txtUsername.Text;
+                defaultCfg.Password = txtPassword.Text;
+                var defaultProfile = StoredProcs
+                        .ExtensionConfiguration_GetConfigurations(TeamCityConfigurer.ConfigurerName)
+                        .Execute()
+                        .Where(p => p.Default_Indicator == Domains.YN.Yes)
+                        .FirstOrDefault() ?? new Tables.ExtensionConfigurations();
+                
+                StoredProcs
+                    .ExtensionConfiguration_SaveConfiguration(
+                        Util.NullIf(defaultProfile.ExtensionConfiguration_Id, 0),
+                        TeamCityConfigurer.ConfigurerName,
+                        defaultProfile.Profile_Name ?? "Default",
+                        Util.Persistence.SerializeToPersistedObjectXml(defaultCfg),
+                        Domains.YN.Yes)
+                    .Execute();
             };
         }
         private void CreateSelectArtifactControls()
@@ -179,7 +204,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             {
                 Style = "width:350px"
             };
-            ctlSelectBuildConfigurationPicker.Init += (s, e) => ctlSelectBuildConfigurationPicker.FillItems(null);
+            ctlSelectBuildConfigurationPicker.PreRender += (s, e) => ctlSelectBuildConfigurationPicker.FillItems(null);
 
             var txtArtifactName = new ValidatingTextBox
             {

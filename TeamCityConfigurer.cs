@@ -11,6 +11,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
     [CustomEditor(typeof(TeamCityConfigurerEditor))]
     public sealed class TeamCityConfigurer : ExtensionConfigurerBase
     {
+        public static readonly string ConfigurerName = typeof(TeamCityConfigurer).FullName + "," + typeof(TeamCityConfigurer).Assembly.GetName().Name;
         internal static TeamCityConfigurer GetConfigurer(string profileName = null)
         {
             var typ = typeof(TeamCityConfigurer);
@@ -79,5 +80,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             return string.Empty;
         }
+
+        
     }
 }
