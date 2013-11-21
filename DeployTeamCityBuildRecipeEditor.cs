@@ -99,13 +99,13 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.wizardSteps.About.Controls.Add(
                 new H2("About the Deploy TeamCity Build Wizard"),
                 new P(
-                    "This wizard will create a basic application for deploying builds from a TeamCity server. Like may wizards, this is meant as a starting point.",
+                    "This wizard will create a basic application for deploying builds from a TeamCity server. Like many wizards, this is meant as a starting point. ",
                     "After the wizard completes, you can change the servers, deployment targets, or any other aspects of the application by editing the Deployment Plan."
                 ), 
                 new P(
                     "To learn more about BuildMaster integration, see the ",
                     new A("TeamCity Extension"){ Href = "http://inedo.com/buildmaster/extensions/teamcity", Target="_blank" },
-                    " for more details"
+                    " for more details."
                 )
             );
         }
@@ -202,7 +202,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             var ctlSelectBuildConfigurationPicker = new SelectBuildConfigurationPicker
             {
-                Style = "width:350px"
+                Width = 350
             };
             ctlSelectBuildConfigurationPicker.PreRender += (s, e) => ctlSelectBuildConfigurationPicker.FillItems(null);
 

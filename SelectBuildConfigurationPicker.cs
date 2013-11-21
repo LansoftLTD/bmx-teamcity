@@ -15,7 +15,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public SelectBuildConfigurationPicker()
         {
             this.OptionGroupSeparator = ":";
-            this.AllowNew = true;
         }
 
         internal void FillItems(string configurationProfileName)
