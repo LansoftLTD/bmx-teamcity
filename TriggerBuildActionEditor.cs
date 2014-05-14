@@ -68,7 +68,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 ),
                 new FormFieldGroup(
                     "Additional Parameters",
-                    "Optionally enter any additional parameters accepted by the TeamCity API in query string format, for example:<br/> " + HttpUtility.HtmlEncode("&agent=<agent Id>&system.name=<property name1>&system.value=<value1>"),
+                    "Optionally enter any additional parameters accepted by the TeamCity API in query string format, for example:<br/> " + HttpUtility.HtmlEncode("&name=agent&value=<agentnamevalue>&name=system.name&value=<systemnamevalue>.."),
                     false,
                     new StandardFormField("Additional Parameters:", this.txtAdditionalParameters)
                 ),
