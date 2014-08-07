@@ -1,17 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using Inedo.BuildMaster.Extensibility.Recipes;
+using System.Net;
 using Inedo.BuildMaster;
 using Inedo.BuildMaster.Data;
-using Inedo.BuildMaster.Web.Controls.Extensions;
-using System.Web.UI;
-using Inedo.Web.Controls;
+using Inedo.BuildMaster.Extensibility.Recipes;
 using Inedo.BuildMaster.Web.Controls;
-using System.Web.UI.WebControls;
+using Inedo.BuildMaster.Web.Controls.Extensions;
+using Inedo.Web.Controls;
 using Inedo.Web.Controls.SimpleHtml;
-using System.Net;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
@@ -24,16 +20,17 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         private sealed class DeployTeamCityBuildRecipeEditordSteps : RecipeWizardSteps
         {
             public RecipeWizardStep About = new RecipeWizardStep("About");
-            public RecipeWizardStep TeamCityConnection = new RecipeWizardStep("TeamCity");
-            public RecipeWizardStep TeamCityBuild = new RecipeWizardStep("Build"); 
+            public RecipeWizardStep TeamCityConnection = new RecipeWizardStep("TeamCity Server");
+            public RecipeWizardStep TeamCityBuild = new RecipeWizardStep("Build Import"); 
             public RecipeWizardStep SelectDeploymentPath = new RecipeWizardStep("Deployment");
+            public RecipeWizardStep Summary = new RecipeWizardStep("Summary");
             
 
             public override RecipeWizardStep[] WizardStepOrder
             {
                 get
                 {
-                    return new[] { this.About, this.TeamCityConnection, this.TeamCityBuild, base.SpecifyApplicationProperties, base.SpecifyWorkflowOrder, this.SelectDeploymentPath };
+                    return new[] { this.About, this.TeamCityConnection, this.TeamCityBuild, base.SpecifyApplicationProperties, base.SpecifyWorkflowOrder, this.SelectDeploymentPath, this.Summary };
                 }
             }
         }
@@ -92,15 +89,15 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.CreateTeamCityConnectionControls();
             this.CreateSelectArtifactControls();
             this.CreateSelectDeploymentPathControls();
-
+            this.CreateSummaryControls();
         }
         private void CreateAboutControls()
         {
             this.wizardSteps.About.Controls.Add(
                 new H2("About the Deploy TeamCity Build Wizard"),
                 new P(
-                    "This wizard will create a basic application for deploying builds from a TeamCity server. Like many wizards, this is meant as a starting point. ",
-                    "After the wizard completes, you can change the servers, deployment targets, or any other aspects of the application by editing the Deployment Plan."
+                    "This wizard will create a basic application for importing and deploying builds from a TeamCity server. Like many wizards, this is meant as a starting point. ",
+                    "After the wizard completes, you can change the servers, deployment targets, or any other aspects of the application by editing its workflows or deployment plans."
                 ), 
                 new P(
                     "To learn more about BuildMaster integration, see the ",
@@ -200,11 +197,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         }
         private void CreateSelectArtifactControls()
         {
-            var ctlSelectBuildConfigurationPicker = new SelectBuildConfigurationPicker
-            {
-                Width = 350
-            };
-            ctlSelectBuildConfigurationPicker.PreRender += (s, e) => ctlSelectBuildConfigurationPicker.FillItems(null);
+            var ctlSelectBuildConfigurationPicker = new SelectBuildConfigurationPicker { Width = 350 };
+            ctlSelectBuildConfigurationPicker.PreRender += (s, e) => ctlSelectBuildConfigurationPicker.FillItems(TeamCityConfigurer.GetConfigurer());
 
             var txtArtifactName = new ValidatingTextBox
             {
@@ -230,10 +224,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             {
                 if (e.CurrentStep != this.wizardSteps.TeamCityBuild) return;
                 this.BuildConfigurationId = ctlSelectBuildConfigurationPicker.SelectedValue;
-                this.BuildConfigurationName = ctlSelectBuildConfigurationPicker.Items.Cast<ListItem>()
-                    .Where(li => li.Selected)
-                    .Select(li => li.Text)
-                    .FirstOrDefault();
+                this.BuildConfigurationName = ctlSelectBuildConfigurationPicker.SelectedItem.Text;
                 this.ArtifactName = txtArtifactName.Text;
             };
         }
@@ -244,7 +235,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 DisplayMode = SourceControlBrowser.DisplayModes.Folders,
                 ServerId = 1
             };
-
 
             this.wizardSteps.SelectDeploymentPath.Controls.Add(
                 new FormFieldGroup(
@@ -262,12 +252,35 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             };
         }
 
+        private void CreateSummaryControls()
+        {
+            this.wizardSteps.Summary.Controls.Add(
+                new H2("Deploy TeamCity Artifact Example Wizard Summary"),
+                new P(
+                    "This wizard will create a basic application for importing and deploying builds from a TeamCity server. Like many wizards, this is meant as a starting point. ",
+                    "After the wizard completes, you can change the servers, deployment targets, or any other aspects of the application by editing its workflows or deployment plans."
+                ),
+                new P("This details of this recipe include:"),
+                new Ul(
+                    new Li(new B("Build configuration name: "), GetRenderDelegator(() => this.BuildConfigurationName), " (id=", GetRenderDelegator(() => this.BuildConfigurationId), ")"),
+                    new Li(new B("Target deployment path: "), GetRenderDelegator(() => this.TargetDeploymentPath)),
+                    new Li(new B("Artifact name: "), GetRenderDelegator(() => this.ArtifactName))
+                )                
+            );
+        }
+
+        private RenderDelegator GetRenderDelegator(Func<string> getValue)
+        {
+            return new RenderDelegator(w => w.Write(getValue() ?? ""));
+        }
+
         public override RecipeBase CreateFromForm()
         {
             return new DeployTeamCityBuildRecipe
             {
                 TargetDeploymentPath = this.TargetDeploymentPath,
                 BuildConfigurationId = this.BuildConfigurationId,
+                BuildConfigurationName = this.BuildConfigurationName,
                 ArtifactName = this.ArtifactName
             };
         }

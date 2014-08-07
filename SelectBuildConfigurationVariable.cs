@@ -11,7 +11,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 {
     [VariableProperties("TeamCity Build Configuration", "Allows selection of a Build Configuration from a TeamCity Instance")]
     [CustomSetter(typeof(SelectBuildConfigurationVariableSetter))]
-    //[CustomEditor(typeof(SelectBuildConfigurationVariableEditor))]
     public sealed class SelectBuildConfigurationVariable : VariableBase
     {
         [Persistent]

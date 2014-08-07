@@ -13,9 +13,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity
     [ActionProperties(
         "Trigger TeamCity Build",
         "Triggers a build in TeamCity using the specified build configuration ID.",
-        "TeamCity",
         DefaultToLocalServer = true)]
     [CustomEditor(typeof(TriggerBuildActionEditor))]
+    [Tag(Tags.ContinuousIntegration)]
     public sealed class TriggerBuildAction : TeamCityActionBase
     {
         /// <summary>

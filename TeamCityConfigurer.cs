@@ -1,8 +1,9 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Inedo.BuildMaster;
+using Inedo.BuildMaster.Data;
 using Inedo.BuildMaster.Extensibility.Configurers.Extension;
 using Inedo.BuildMaster.Web;
-using Inedo.BuildMaster.Data;
 
 [assembly: ExtensionConfigurer(typeof(Inedo.BuildMasterExtensions.TeamCity.TeamCityConfigurer))]
 
@@ -11,21 +12,25 @@ namespace Inedo.BuildMasterExtensions.TeamCity
     [CustomEditor(typeof(TeamCityConfigurerEditor))]
     public sealed class TeamCityConfigurer : ExtensionConfigurerBase
     {
-        public static readonly string ConfigurerName = typeof(TeamCityConfigurer).FullName + "," + typeof(TeamCityConfigurer).Assembly.GetName().Name;
+        internal static readonly string ConfigurerName = typeof(TeamCityConfigurer).FullName + "," + typeof(TeamCityConfigurer).Assembly.GetName().Name;
+
+        /// <summary>
+        /// Gets the configurer based on the profile name, the default configurer if no name is specified, or null.
+        /// </summary>
+        /// <param name="profileName">Name of the profile.</param>
         internal static TeamCityConfigurer GetConfigurer(string profileName = null)
         {
-            var typ = typeof(TeamCityConfigurer);
-
             var profiles = StoredProcs
-                .ExtensionConfiguration_GetConfigurations(typ.FullName + "," + typ.Assembly.GetName().Name)
+                .ExtensionConfiguration_GetConfigurations(TeamCityConfigurer.ConfigurerName)
                 .Execute();
-            //throw new System.Exception(typ.FullName + "," + typ.Assembly.GetName().Name);
-            var configurer =
-                profiles.FirstOrDefault(p => string.Equals(profileName, p.Profile_Name, System.StringComparison.OrdinalIgnoreCase))
-                ??
-                profiles.FirstOrDefault(p => p.Default_Indicator.Equals(Domains.YN.Yes));
 
-            if (configurer == null) return null;
+            var configurer = profiles.FirstOrDefault(p => string.Equals(profileName, p.Profile_Name, StringComparison.OrdinalIgnoreCase));
+            
+            if (configurer == null)
+                configurer = profiles.FirstOrDefault(p => p.Default_Indicator.Equals(Domains.YN.Yes));
+
+            if (configurer == null)
+                return null;
 
             return (TeamCityConfigurer)Util.Persistence.DeserializeFromPersistedObjectXml(configurer.Extension_Configuration);
         }
@@ -45,7 +50,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         /// <summary>
         /// Gets or sets the password.
         /// </summary>
-        [Persistent]
+        [Persistent(Encrypted = true)]
         public string Password { get; set; }
 
         /// <summary>
@@ -80,7 +85,5 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             return string.Empty;
         }
-
-        
     }
 }

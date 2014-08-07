@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Inedo.BuildMaster.Extensibility.Recipes;
-using Inedo.BuildMaster;
+﻿using Inedo.BuildMaster;
 using Inedo.BuildMaster.Data;
+using Inedo.BuildMaster.Extensibility.Recipes;
 using Inedo.BuildMaster.Web;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
@@ -27,7 +23,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public string BuildConfigurationId { get; set; }
         public string ArtifactName { get; set; }
         public string TargetDeploymentPath { get; set; }
-
+        public string BuildConfigurationName { get; set; }
 
         public override void Execute()
         {
@@ -35,53 +31,52 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             string deployableName = this.ApplicationName;
             int firstEnvironmentId = this.WorkflowSteps[0];
 
-            int planId = Util.Recipes.CreatePlan(this.ApplicationId, deployableId, firstEnvironmentId,
-                "Get Artifact from TeamCity",
-                "Actions in this group will retrieve an artifact from TeamCity and create it as a BuildMaster artifact."
-            );
-
-            Util.Recipes.AddAction(planId, 1, new GetArtifactAction
+            var template = new TeamCityBuildImporterTemplate() 
             {
                 ArtifactName = this.ArtifactName,
+                ArtifactNameLocked = false,
                 BuildConfigurationId = this.BuildConfigurationId,
                 BuildNumber = "lastSuccessful",
-                ExtractFilesToTargetDirectory = true
-            });
+                BuildConfigurationDisplayName = this.BuildConfigurationName
+            };
 
-            Util.Recipes.AddAction(planId, 1, Util.Recipes.Munging.MungeCoreExAction(
-                "Inedo.BuildMaster.Extensibility.Actions.Artifacts.CreateArtifactAction", new
+            Util.Recipes.CreateBuildStepBuildImporter(this.WorkflowId, template);
+
+            int firstDeploymentPlanId = Util.Recipes.CreateDeploymentPlanForWorkflowStep(this.WorkflowId, 1);
+
+            int actionGroupId = Util.Recipes.CreateDeploymentPlanActionGroup(
+                firstDeploymentPlanId,
+                deployableId: null,
+                deployableName: null,
+                name: "Stop Application",
+                description: "Stop/shutdown/disable the application or application servers prior to deployment."
+            );
+
+            actionGroupId = Util.Recipes.CreateDeploymentPlanActionGroup(
+                firstDeploymentPlanId,
+                deployableId: deployableId,
+                deployableName: null,
+                name: "Deploy " + deployableName,
+                description: "Deploy the artifacts created in the build actions, and then any configuration files needed."
+            );
+
+            Util.Recipes.AddAction(actionGroupId, 1, Util.Recipes.Munging.MungeCoreExAction(
+                "Inedo.BuildMaster.Extensibility.Actions.Artifacts.DeployArtifactAction", new
                 {
-                    ArtifactName = deployableName
+                    ArtifactName = this.ArtifactName,
+                    OverriddenTargetDirectory = this.TargetDeploymentPath,
+                    DoNotClearTargetDirectory = false
                 })
             );
 
-            foreach (int environmentId in this.WorkflowSteps)
-            {
-                Util.Recipes.CreatePlan(this.ApplicationId, null, environmentId,
-                    "Stop Application",
-                    "Stop/shutdown/disable the application or application servers prior to deployment."
-                );
+            Util.Recipes.CreateDeploymentPlanActionGroup(
+                firstDeploymentPlanId,
+                deployableId: null,
+                deployableName: null,
+                name: "Start Application",
+                description: "Start the application or application servers after deployment, and possibly run some post-startup automated testing."
+            );
 
-                planId = Util.Recipes.CreatePlan(this.ApplicationId, deployableId, environmentId,
-                    "Deploy " + deployableName,
-                    "Deploy the artifacts created in the build actions, and then any configuration files needed."
-                );
-
-
-                Util.Recipes.AddAction(planId, 1, Util.Recipes.Munging.MungeCoreExAction(
-                    "Inedo.BuildMaster.Extensibility.Actions.Artifacts.DeployArtifactAction", new
-                    {
-                        ArtifactName = deployableName,
-                        OverriddenTargetDirectory = this.TargetDeploymentPath,
-                        DoNotClearTargetDirectory = false
-                    })
-                );
-
-                Util.Recipes.CreatePlan(this.ApplicationId, null, environmentId,
-                    "Start Application",
-                    "Start the application or application servers after deployment, and possibly run some post-startup automated testing."
-                );
-            }
 
             Util.Recipes.CreateSetupRelease(this.ApplicationId, Domains.ReleaseNumberSchemes.MajorMinor, this.WorkflowId, new[] { deployableId });
         }

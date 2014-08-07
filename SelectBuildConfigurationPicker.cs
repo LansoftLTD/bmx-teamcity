@@ -7,6 +7,8 @@ using Inedo.BuildMaster.Web.Controls.Extensions;
 using System.Net;
 using System.Xml.Linq;
 using System.Web.UI.WebControls;
+using Inedo.BuildMaster;
+using Inedo.BuildMaster.Extensibility;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
@@ -17,10 +19,16 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.OptionGroupSeparator = ":";
         }
 
-        internal void FillItems(string configurationProfileName)
+        protected override void OnPreRender(EventArgs e)
         {
-            var configurer = TeamCityConfigurer.GetConfigurer(InedoLib.Util.NullIf(configurationProfileName, string.Empty));
-            if (configurer == null) return;
+            this.EnsureID();
+            base.OnPreRender(e);
+        }
+
+        internal void FillItems(TeamCityConfigurer configurer)
+        {
+            if (configurer == null)
+                return;
 
             using (var client = new WebClient())
             {

@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using Inedo.BuildMaster;
 using Inedo.BuildMaster.Extensibility.Actions;
 using Inedo.BuildMaster.Extensibility.Agents;
@@ -13,9 +12,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity
     [ActionProperties(
         "Get TeamCity Artifact",
         "Gets an artifact from a TeamCity server.",
-        "TeamCity",
         DefaultToLocalServer = true)]
     [CustomEditor(typeof(GetArtifactActionEditor))]
+    [Tag(Tags.ContinuousIntegration)]
     public sealed class GetArtifactAction : TeamCityActionBase
     {
         /// <summary>

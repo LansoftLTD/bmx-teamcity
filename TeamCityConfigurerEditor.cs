@@ -1,5 +1,4 @@
 ﻿using Inedo.BuildMaster.Extensibility.Configurers.Extension;
-using Inedo.BuildMaster.Web.Controls;
 using Inedo.BuildMaster.Web.Controls.Extensions;
 using Inedo.Web.Controls;
 
@@ -56,36 +55,20 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         protected override void CreateChildControls()
         {
-            this.txtServerUrl = new ValidatingTextBox()
-            {
-                Required = true,
-                Width = 300
-            };
+            this.txtServerUrl = new ValidatingTextBox() { Required = true };
+            this.txtUsername = new ValidatingTextBox();
+            this.txtPassword = new PasswordTextBox();
 
-            this.txtUsername = new ValidatingTextBox()
-            {
-                Width = 300
-            };
-
-            this.txtPassword = new PasswordTextBox()
-            {
-                Width = 270
-            };
-
-            CUtil.Add(this,
-                new FormFieldGroup(
-                    "TeamCity Server URL",
-                    "Enter the URL of the TeamCity server, typically: http://teamcityserver",
-                    false,
-                    new StandardFormField("Server URL:", this.txtServerUrl)
-                ),
-                new FormFieldGroup(
-                    "Authentication",
-                    "If you wish to connect to the TeamCity server with HTTP Authentication, please enter the credentials. Leaving the username field blank will connect using guest authentication.",
-                    true,
-                    new StandardFormField("Username:", this.txtUsername),
-                    new StandardFormField("Password:", this.txtPassword)
-                )
+            this.Controls.Add(
+                new SlimFormField("TeamCity server URL:", this.txtServerUrl)
+                {
+                    HelpText = "Enter the URL of the TeamCity server, typically: http://teamcityserver"
+                },
+                new SlimFormField("Username:", this.txtUsername)
+                {
+                    HelpText = "If you wish to connect to the TeamCity server with HTTP Authentication, please enter the credentials. Leaving the username field blank will connect using guest authentication."
+                },
+                new SlimFormField("Password:", this.txtPassword)
             );
         }
     }

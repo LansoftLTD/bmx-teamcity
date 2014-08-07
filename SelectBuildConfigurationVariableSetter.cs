@@ -33,8 +33,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         void IVariableSetter<SelectBuildConfigurationVariable>.BindToVariable(SelectBuildConfigurationVariable variable, string defaultValue)
         {
             if (variable == null) throw new ArgumentNullException("variable");
-
-            this.FillItems(variable.ConfigurationProfileName);
+            
+            this.FillItems(TeamCityConfigurer.GetConfigurer(variable.ConfigurationProfileName));
             this.SelectedValue = InedoLib.Util.CoalesceStr(variable.Value, defaultValue);
         }
     }
