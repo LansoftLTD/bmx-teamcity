@@ -22,7 +22,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public bool Enabled { get; set; }
         public string BuildConfigurationId { get; set; }
         public Control ControlIdWithBuildConfigurationId { get; set; }
-        public string ControlIdWithConfigurerId { get; set; }
+        public int ConfigurerId { get; set; }
 
         protected override void OnPreRender(EventArgs e)
         {
@@ -60,7 +60,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                     hiddenFieldSelector = "#" + this.ClientID,
                     buildConfigSelector = this.ControlIdWithBuildConfigurationId != null ? "#" + this.ControlIdWithBuildConfigurationId.ClientID : null,
                     buildConfigId = this.BuildConfigurationId,
-                    configurerSelector = "#" + this.ControlIdWithConfigurerId
+                    configurerId = this.ConfigurerId
                 }
             );
             writer.Write(");");
@@ -71,7 +71,11 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         [AjaxMethod]
         private static object GetBuildNumbers(string buildConfigurationId, int configurerId)
         {
-            var configurer = (TeamCityConfigurer)Util.ExtensionConfigurers.GetExtensionConfigurer(configurerId);
+            TeamCityConfigurer configurer;
+            if (configurerId == 0)
+                configurer = TeamCityConfigurer.GetConfigurer();
+            else
+                configurer = (TeamCityConfigurer)Util.ExtensionConfigurers.GetExtensionConfigurer(configurerId);
 
             using (var client = new WebClient())
             {

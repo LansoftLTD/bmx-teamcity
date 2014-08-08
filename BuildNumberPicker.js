@@ -4,7 +4,7 @@ function BmTeamCityBuildNumberPicker(o) {
     /// hiddenFieldSelector: '',
     /// buildConfigSelector: '',
     /// buildConfigId: '',
-    /// configurerSelector: ''
+    /// configurerId: ''
     /// includeBuildNumbers: ''
     /// }"/>
 
@@ -19,7 +19,7 @@ function BmTeamCityBuildNumberPicker(o) {
         $.ajax({
             url: o.ajaxUrl,
             type: 'POST',
-            data: { buildConfigurationId: buildConfigId, configurerId: 1, includeBuildNumbers: o.includeBuildNumbers },
+            data: { buildConfigurationId: buildConfigId, configurerId: o.configurerId, includeBuildNumbers: o.includeBuildNumbers },
             success: function (data) {
                 $(o.hiddenFieldSelector).select2({
                     createSearchChoice: createSearchChoice,

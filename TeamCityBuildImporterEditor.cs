@@ -34,7 +34,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             { 
                 Value = Util.CoalesceStr(this.Template.BuildNumber, "lastSuccessful"),
                 Enabled = string.IsNullOrEmpty(this.Template.BuildNumber),
-                BuildConfigurationId = this.Template.BuildConfigurationId
+                BuildConfigurationId = this.Template.BuildConfigurationId,
+                ConfigurerId = this.Template.ExtensionConfigurerId ?? 0
             };
 
             this.Controls.Add(
