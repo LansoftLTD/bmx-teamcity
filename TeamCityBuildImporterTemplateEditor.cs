@@ -1,5 +1,6 @@
 ﻿using System.Web.UI.WebControls;
 using Inedo.BuildMaster.Extensibility.BuildImporters;
+using Inedo.BuildMaster.Web.Controls.Extensions;
 using Inedo.BuildMaster.Web.Controls.Extensions.BuildImporters;
 using Inedo.Web.Controls;
 using Inedo.Web.Controls.SimpleHtml;
@@ -12,6 +13,21 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         private CheckBox chkArtifactNameLocked;
         private SelectBuildConfigurationPicker ddlBuildConfigurationId;
         private ComboSelect ddlBuildNumber;
+
+        public TeamCityBuildImporterTemplateEditor()
+        {
+            this.ValidateBeforeSave += TeamCityBuildImporterTemplateEditor_ValidateBeforeSave;
+        }
+
+        private void TeamCityBuildImporterTemplateEditor_ValidateBeforeSave(object sender, ValidationEventArgs<BuildImporterTemplateBase> e)
+        {
+            var template = (TeamCityBuildImporterTemplate)e.Extension;
+            if (string.IsNullOrWhiteSpace(template.BuildConfigurationId))
+            {
+                e.Message = "A build configuration is required";
+                e.ValidLevel = ValidationLevel.Error;
+            }
+        }
 
         public override void BindToForm(BuildImporterTemplateBase extension)
         {
@@ -30,7 +46,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 ArtifactName = this.txtArtifactName.Text,
                 ArtifactNameLocked = !this.chkArtifactNameLocked.Checked,
                 BuildConfigurationId = this.ddlBuildConfigurationId.SelectedValue,
-                BuildConfigurationDisplayName = this.ddlBuildConfigurationId.SelectedItem.Text,
+                BuildConfigurationDisplayName = this.ddlBuildConfigurationId.SelectedItem != null ? this.ddlBuildConfigurationId.SelectedItem.Text : string.Empty,
                 BuildNumber = this.ddlBuildNumber.SelectedValue
             };
         }
