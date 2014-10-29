@@ -81,7 +81,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             var remoteZip = this.Context.Agent.GetService<IRemoteZip>();
 
             string tempFile;
-            using (var client = CreateClient())
+            using (var client = new TeamCityWebClient(this.GetExtensionConfigurer()))
             {
                 tempFile = Path.GetTempFileName();
                 client.DownloadFile(relativeUrl, tempFile);

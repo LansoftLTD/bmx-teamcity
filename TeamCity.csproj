@@ -107,6 +107,9 @@
     <Compile Include="TeamCityConfigurerEditor.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="TeamCityWebClient.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="TriggerBuildAction.cs" />
     <Compile Include="TriggerBuildActionEditor.cs">
       <SubType>ASPXCodeBehind</SubType>

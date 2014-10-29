@@ -66,7 +66,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             string triggerUrl = string.Format("action.html?add2Queue={0}{1}", this.BuildConfigurationId, this.AdditionalParameters);
             
-            using (var client = CreateClient())
+            using (var client = new TeamCityWebClient(this.GetExtensionConfigurer()))
             {
                 LogDebug("Triggering build of configuration {0} at {1}", this.BuildConfigurationId, GetExtensionConfigurer().BaseUrl + triggerUrl);
                 client.DownloadString(triggerUrl);

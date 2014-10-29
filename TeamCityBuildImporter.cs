@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Net;
 using System.Xml.Linq;
 using Inedo.BuildMaster;
 using Inedo.BuildMaster.Artifacts;
@@ -50,7 +49,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.LogDebug("Importing TeamCity artifact \"{0}\" from {1}...", this.ArtifactName, this.GetExtensionConfigurer().BaseUrl + relativeUrl);
 
             string tempFile;
-            using (var client = CreateClient())
+            using (var client = new TeamCityWebClient(this.GetExtensionConfigurer()))
             {
                 tempFile = Path.GetTempFileName();
                 client.DownloadFile(relativeUrl, tempFile);
@@ -84,18 +83,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
               ).Execute();
         }
 
-        private WebClient CreateClient()
-        {
-            var configurer = this.GetExtensionConfigurer();
-
-            var client = new WebClient() { BaseAddress = configurer.BaseUrl };
-
-            if (!string.IsNullOrEmpty(configurer.Username))
-                client.Credentials = new NetworkCredential(configurer.Username, configurer.Password);
-
-            return client;
-        }
-
         private string GetActualBuildNumber(string buildNumber)
         {
             if (InedoLib.Util.Int.ParseN(buildNumber) != null)
@@ -116,7 +103,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             }
             try
             {
-                using (var client = CreateClient())
+                using (var client = new TeamCityWebClient(this.GetExtensionConfigurer()))
                 {
                     string xml = client.DownloadString(apiUrl);
                     var doc = XDocument.Parse(xml);
