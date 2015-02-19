@@ -22,7 +22,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             public RecipeWizardStep About = new RecipeWizardStep("About");
             public RecipeWizardStep TeamCityConnection = new RecipeWizardStep("TeamCity Server");
             public RecipeWizardStep TeamCityBuild = new RecipeWizardStep("Build Import"); 
-            public RecipeWizardStep SelectDeploymentPath = new RecipeWizardStep("Deployment");
             public RecipeWizardStep Summary = new RecipeWizardStep("Summary");
             
 
@@ -30,7 +29,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             {
                 get
                 {
-                    return new[] { this.About, this.TeamCityConnection, this.TeamCityBuild, base.SpecifyApplicationProperties, base.SpecifyWorkflowOrder, this.SelectDeploymentPath, this.Summary };
+                    return new[] { this.About, this.TeamCityConnection, this.TeamCityBuild, base.SpecifyApplicationProperties, base.SpecifyWorkflowOrder, this.Summary };
                 }
             }
         }
@@ -41,12 +40,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             get { return (int)(this.ViewState["TargetServerId"] ?? 0); }
             set { this.ViewState["TargetServerId"] = value; }
-        }
-
-        private string TargetDeploymentPath
-        {
-            get { return (string)this.ViewState["TargetDeploymentPath"]; }
-            set { this.ViewState["TargetDeploymentPath"] = value; }
         }
 
         private string BuildConfigurationId
@@ -88,7 +81,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.CreateAboutControls();
             this.CreateTeamCityConnectionControls();
             this.CreateSelectArtifactControls();
-            this.CreateSelectDeploymentPathControls();
             this.CreateSummaryControls();
         }
         private void CreateAboutControls()
@@ -228,29 +220,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 this.ArtifactName = txtArtifactName.Text;
             };
         }
-        private void CreateSelectDeploymentPathControls()
-        {
-            var ctlTargetDeploymentPath = new SourceControlFileFolderPicker()
-            {
-                DisplayMode = SourceControlBrowser.DisplayModes.Folders,
-                ServerId = 1
-            };
-
-            this.wizardSteps.SelectDeploymentPath.Controls.Add(
-                new FormFieldGroup(
-                    "Deployment Target",
-                    "Select a directory where the artifact will be deployed. You can change the server/path in which this gets deployed to later.",
-                    true,
-                    new StandardFormField("Target Directory:", ctlTargetDeploymentPath)
-                )
-            );
-            this.WizardStepChange += (s, e) =>
-            {
-                if (e.CurrentStep != this.wizardSteps.SelectDeploymentPath)
-                    return;
-                this.TargetDeploymentPath = ctlTargetDeploymentPath.Text;
-            };
-        }
 
         private void CreateSummaryControls()
         {
@@ -263,7 +232,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 new P("This details of this recipe include:"),
                 new Ul(
                     new Li(new B("Build configuration name: "), GetRenderDelegator(() => this.BuildConfigurationName), " (id=", GetRenderDelegator(() => this.BuildConfigurationId), ")"),
-                    new Li(new B("Target deployment path: "), GetRenderDelegator(() => this.TargetDeploymentPath)),
                     new Li(new B("Artifact name: "), GetRenderDelegator(() => this.ArtifactName))
                 )                
             );
@@ -278,7 +246,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             return new DeployTeamCityBuildRecipe
             {
-                TargetDeploymentPath = this.TargetDeploymentPath,
                 BuildConfigurationId = this.BuildConfigurationId,
                 BuildConfigurationName = this.BuildConfigurationName,
                 ArtifactName = this.ArtifactName

@@ -1,4 +1,5 @@
-﻿using Inedo.BuildMaster;
+﻿using System.Linq;
+using Inedo.BuildMaster;
 using Inedo.BuildMaster.Data;
 using Inedo.BuildMaster.Extensibility.Recipes;
 using Inedo.BuildMaster.Web;
@@ -22,13 +23,12 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         public string BuildConfigurationId { get; set; }
         public string ArtifactName { get; set; }
-        public string TargetDeploymentPath { get; set; }
         public string BuildConfigurationName { get; set; }
 
         public override void Execute()
         {
-            int deployableId = Util.Recipes.CreateDeployable(this.ApplicationId, this.ApplicationName);
             string deployableName = this.ApplicationName;
+            int deployableId = Util.Recipes.CreateDeployable(this.ApplicationId, deployableName);
             int firstEnvironmentId = this.WorkflowSteps[0];
 
             var template = new TeamCityBuildImporterTemplate() 
@@ -43,6 +43,10 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             Util.Recipes.CreateBuildStepBuildImporter(this.WorkflowId, template);
 
             int firstDeploymentPlanId = Util.Recipes.CreateDeploymentPlanForWorkflowStep(this.WorkflowId, 1);
+
+            int stepSequence = 2;
+            foreach (int step in this.WorkflowSteps.Skip(1))
+                Util.Recipes.CreateDeploymentPlanForWorkflowStep(this.WorkflowId, stepSequence++);
 
             int actionGroupId = Util.Recipes.CreateDeploymentPlanActionGroup(
                 firstDeploymentPlanId,
@@ -63,8 +67,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             Util.Recipes.AddAction(actionGroupId, 1, Util.Recipes.Munging.MungeCoreExAction(
                 "Inedo.BuildMaster.Extensibility.Actions.Artifacts.DeployArtifactAction", new
                 {
-                    ArtifactName = this.ArtifactName,
-                    OverriddenTargetDirectory = this.TargetDeploymentPath,
+                    ArtifactName = Util.Path2.GetFileName(this.ArtifactName),
                     DoNotClearTargetDirectory = false
                 })
             );

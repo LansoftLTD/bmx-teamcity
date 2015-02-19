@@ -61,9 +61,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                     context.ReleaseNumber,
                     context.BuildNumber,
                     context.DeployableId,
-                    this.ArtifactName),
+                    Util.Path2.GetFileName(this.ArtifactName)),
                 Util.Agents.CreateLocalAgent().GetService<IFileOperationsExecuter>(),
-                new FileEntryInfo(this.ArtifactName + ".zip", tempFile)
+                new FileEntryInfo(this.ArtifactName, tempFile)
             );
 
             string teamCityBuildNumber = this.GetActualBuildNumber(this.BuildNumber);
