@@ -54,6 +54,12 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public string Password { get; set; }
 
         /// <summary>
+        /// Gets or sets the default name of the branch to supply for TeamCity operations.
+        /// </summary>
+        [Persistent]
+        public string DefaultBranchName { get; set; }
+
+        /// <summary>
         /// Gets the base URL used for connections to the TeamCity server that incorporates the authentication mechanism.
         /// </summary>
         public string BaseUrl

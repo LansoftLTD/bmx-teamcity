@@ -8,6 +8,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
     {
         private ValidatingTextBox txtServerUrl;
         private ValidatingTextBox txtUsername;
+        private ValidatingTextBox txtDefaultBranchName;
         private PasswordTextBox txtPassword;
 
         /// <summary>
@@ -27,6 +28,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             var configurer = (TeamCityConfigurer)extension;
 
             this.txtServerUrl.Text = configurer.ServerUrl;
+            this.txtDefaultBranchName.Text = configurer.DefaultBranchName;
             if (!string.IsNullOrEmpty(configurer.Username))
             {
                 this.txtUsername.Text = configurer.Username;
@@ -42,7 +44,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             var configurer = new TeamCityConfigurer()
             {
-                ServerUrl = this.txtServerUrl.Text
+                ServerUrl = this.txtServerUrl.Text,
+                DefaultBranchName = this.txtDefaultBranchName.Text
             };
             if (!string.IsNullOrEmpty(this.txtUsername.Text))
             {
@@ -58,6 +61,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.txtServerUrl = new ValidatingTextBox() { Required = true };
             this.txtUsername = new ValidatingTextBox();
             this.txtPassword = new PasswordTextBox();
+            this.txtDefaultBranchName = new ValidatingTextBox() { DefaultText = "TeamCity-defined" };
 
             this.Controls.Add(
                 new SlimFormField("TeamCity server URL:", this.txtServerUrl)
@@ -68,7 +72,12 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 {
                     HelpText = "If you wish to connect to the TeamCity server with HTTP Authentication, please enter the credentials. Leaving the username field blank will connect using guest authentication."
                 },
-                new SlimFormField("Password:", this.txtPassword)
+                new SlimFormField("Password:", this.txtPassword),
+                new SlimFormField("Default branch:", this.txtDefaultBranchName)
+                {
+                    HelpText = "To override the default branch used by TeamCity for Get Artifact operations, specify a branch name here. "
+                    + "The branch may also be overridden in individual deployment actions."
+                }
             );
         }
     }
