@@ -10,7 +10,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity
     internal sealed class TeamCityBuildImporterTemplateEditor : BuildImporterTemplateEditorBase
     {
         private ValidatingTextBox txtArtifactName;
+        private ValidatingTextBox txtBranchName;
         private CheckBox chkArtifactNameLocked;
+        private CheckBox chkBranchNameLocked;
         private SelectBuildConfigurationPicker ddlBuildConfigurationId;
         private ComboSelect ddlBuildNumber;
 
@@ -37,6 +39,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.ddlBuildConfigurationId.SelectedValue = template.BuildConfigurationId;
             this.chkArtifactNameLocked.Checked = !template.ArtifactNameLocked;
             this.ddlBuildNumber.SelectedValue = template.BuildNumber;
+            this.chkBranchNameLocked.Checked = !template.BranchNameLocked;
         }
 
         public override BuildImporterTemplateBase CreateFromForm()
@@ -47,14 +50,18 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 ArtifactNameLocked = !this.chkArtifactNameLocked.Checked,
                 BuildConfigurationId = this.ddlBuildConfigurationId.SelectedValue,
                 BuildConfigurationDisplayName = this.ddlBuildConfigurationId.SelectedItem != null ? this.ddlBuildConfigurationId.SelectedItem.Text : string.Empty,
-                BuildNumber = this.ddlBuildNumber.SelectedValue
+                BuildNumber = this.ddlBuildNumber.SelectedValue,
+                BranchName = this.txtBranchName.Text,
+                BranchNameLocked = !this.chkBranchNameLocked.Checked
             };
         }
 
         protected override void CreateChildControls()
         {
             this.txtArtifactName = new ValidatingTextBox { Required = true };
+            this.txtBranchName = new ValidatingTextBox() { DefaultText = "Default" };
             this.chkArtifactNameLocked = new CheckBox { Text = "Allow selection at build time" };
+            this.chkBranchNameLocked = new CheckBox { Text = "Allow selection at build time" };
 
             this.ddlBuildConfigurationId = new SelectBuildConfigurationPicker() { ID = "ddlBuildConfigurationId" };
             this.ddlBuildConfigurationId.Init +=
@@ -73,6 +80,13 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 new SlimFormField("Build configuration:", this.ddlBuildConfigurationId),
                 new SlimFormField("TeamCity build number:", this.ddlBuildNumber),
                 new SlimFormField("Artifact name:", new Div(this.txtArtifactName), new Div(this.chkArtifactNameLocked))
+                {
+                    HelpText = "The name of artifact, for example: \"ideaIC-118.SNAPSHOT.win.zip\"."
+                },
+                new SlimFormField("Branch name:", new Div(this.txtBranchName), new Div(this.chkBranchNameLocked))
+                {
+                    HelpText = "The branch used to get the artifact, typically used in conjunction with predefined constant build numbers."
+                }
             );
         }
     }

@@ -18,6 +18,10 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public bool ArtifactNameLocked { get; set; }
         [Persistent]
         public string BuildNumber { get; set; }
+        [Persistent]
+        public string BranchName { get; set; }
+        [Persistent]
+        public bool BranchNameLocked { get; set; }
 
         public override ExtensionComponentDescription GetDescription()
         {

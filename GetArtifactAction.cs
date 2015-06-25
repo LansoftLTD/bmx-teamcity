@@ -60,7 +60,10 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
             string branchName = this.GetBranchName(configurer);
             if (branchName != null)
-                relativeUrl += "?branch=" + Uri.EscapeDataString(this.BranchName);
+            {
+                this.LogDebug("Getting artifact using branch: " + branchName);
+                relativeUrl += "?branch=" + Uri.EscapeDataString(branchName);
+            }
 
             this.LogDebug("Downloading TeamCity artifact \"{0}\" from {1} to {2}", this.ArtifactName, configurer.BaseUrl + relativeUrl, this.Context.TargetDirectory);
 

@@ -9,6 +9,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
     internal sealed class TeamCityBuildImporterEditor : BuildImporterEditorBase<TeamCityBuildImporterTemplate>
     {
         private ValidatingTextBox txtArtifactName;
+        private ValidatingTextBox txtBranchName;
         private BuildNumberPicker ctlBuildNumber;
 
         public override BuildImporterBase CreateFromForm()
@@ -18,7 +19,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 ArtifactName = this.txtArtifactName.Text,
                 BuildConfigurationId = this.Template.BuildConfigurationId,
                 BuildConfigurationDisplayName = this.Template.BuildConfigurationDisplayName,
-                BuildNumber = this.ctlBuildNumber.Value
+                BuildNumber = this.ctlBuildNumber.Value,
+                BranchName = this.txtBranchName.Text
             };
         }
 
@@ -29,6 +31,12 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 Required = true, 
                 Enabled = !this.Template.ArtifactNameLocked,
                 Text = this.Template.ArtifactName
+            };
+            this.txtBranchName = new ValidatingTextBox
+            {
+                Text = this.Template.BranchName,
+                Enabled = !this.Template.BranchNameLocked,
+                DefaultText = "Default"
             };
             this.ctlBuildNumber = new BuildNumberPicker
             { 
@@ -44,6 +52,10 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 new SlimFormField("Artifact name:", this.txtArtifactName)
                 {
                     HelpText = "The name of artifact, for example: \"ideaIC-118.SNAPSHOT.win.zip\"."
+                },
+                new SlimFormField("Branch:", this.txtBranchName)
+                {
+                    HelpText = "The branch used to get the artifact, typically used in conjunction with predefined constant build numbers."
                 }
             );
         }

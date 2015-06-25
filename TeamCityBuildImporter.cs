@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Xml.Linq;
 using Inedo.BuildMaster;
 using Inedo.BuildMaster.Artifacts;
@@ -28,6 +29,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public string BuildConfigurationDisplayName { get; set; }
         [Persistent]
         public string BuildNumber { get; set; }
+        [Persistent]
+        public string BranchName { get; set; }
 
         string ICustomBuildNumberProvider.BuildNumber 
         {
@@ -45,16 +48,36 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public override void Import(IBuildImporterContext context)
         {
             string relativeUrl = string.Format("repository/download/{0}/{1}/{2}", this.BuildConfigurationId, this.BuildNumber, this.ArtifactName);
+            var configurer = this.GetExtensionConfigurer();
+            string branchName = this.GetBranchName(configurer);
+            if (branchName != null)
+            {
+                this.LogDebug("Branch name was specified: " + branchName);
+                relativeUrl += "?branch=" + Uri.EscapeDataString(this.BranchName);
+            }
             
             this.LogDebug("Importing TeamCity artifact \"{0}\" from {1}...", this.ArtifactName, this.GetExtensionConfigurer().BaseUrl + relativeUrl);
 
             string tempFile;
-            using (var client = new TeamCityWebClient(this.GetExtensionConfigurer()))
+            using (var client = new TeamCityWebClient(configurer))
             {
                 tempFile = Path.GetTempFileName();
-                client.DownloadFile(relativeUrl, tempFile);
+                this.LogDebug("Downloading temp file to \"{0}\"...", tempFile);
+                try
+                {
+                    client.DownloadFile(relativeUrl, tempFile);
+                }
+                catch (WebException wex)
+                { 
+                    var response = wex.Response as HttpWebResponse;
+                    if (response != null && response.StatusCode == HttpStatusCode.NotFound)
+                        this.LogWarning("The TeamCity request returned a 404 - this could mean that the branch name, build number, or build configuration is invalid.");
+                    
+                    throw;
+                }
             }
 
+            this.LogInformation("Importing artifact into BuildMaster...");
             ArtifactBuilder.ImportZip(
                 new ArtifactIdentifier(
                     context.ApplicationId,
@@ -67,6 +90,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             );
 
             string teamCityBuildNumber = this.GetActualBuildNumber(this.BuildNumber);
+            this.LogDebug("TeamCity build number resolved to {0}, creating $TeamCityBuildNumber variable...", teamCityBuildNumber);
 
             StoredProcs.Variables_CreateOrUpdateVariableDefinition(
                 "TeamCityBuildNumber",
@@ -86,7 +110,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         private string GetActualBuildNumber(string buildNumber)
         {
             if (InedoLib.Util.Int.ParseN(buildNumber) != null)
-                return this.BuildNumber;
+                return buildNumber;
+            
+            this.LogDebug("Build number is the predefined constant \"{0}\", resolving...", buildNumber);
 
             string apiUrl;
             switch (buildNumber)
@@ -103,7 +129,12 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             }
             try
             {
-                using (var client = new TeamCityWebClient(this.GetExtensionConfigurer()))
+                var configurer = this.GetExtensionConfigurer();
+                string branch = this.GetBranchName(configurer);
+                if (branch != null)
+                    apiUrl += ",branch:" + Uri.EscapeDataString(branch);
+
+                using (var client = new TeamCityWebClient(configurer))
                 {
                     string xml = client.DownloadString(apiUrl);
                     var doc = XDocument.Parse(xml);
@@ -112,9 +143,20 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             }
             catch (Exception ex)
             {
-                Logger.Error("Could not parse actual build number from Team City. Exception details: {0}", ex);
+                this.LogError("Could not parse actual build number from TeamCity. Exception details: {0}", ex);
                 return null;
             }
+        }
+
+        private string GetBranchName(TeamCityConfigurer configurer)
+        {
+            if (!string.IsNullOrEmpty(this.BranchName))
+                return this.BranchName;
+
+            if (!string.IsNullOrEmpty(configurer.DefaultBranchName))
+                return configurer.DefaultBranchName;
+
+            return null;
         }
     }
 }
