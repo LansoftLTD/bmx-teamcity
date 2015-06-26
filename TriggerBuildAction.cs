@@ -37,6 +37,12 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public bool WaitForCompletion { get; set; }
 
         /// <summary>
+        /// Gets or sets the name of the branch.
+        /// </summary>
+        [Persistent]
+        public string BranchName { get; set; }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="TriggerBuildAction"/> class.
         /// </summary>
         public TriggerBuildAction()
@@ -56,34 +62,44 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public override string ToString()
         {
             return string.Format(
-                "Triggers a build of the configuration \"{0}\" in TeamCity{1}.", 
+                "Triggers a build of the configuration \"{0}\" in TeamCity{1}{2}.", 
                 this.BuildConfigurationId,
-                Util.ConcatNE(" with the additional parameters \"", this.AdditionalParameters ,"\"")
+                Util.ConcatNE(" with the additional parameters \"", this.AdditionalParameters ,"\""),
+                !string.IsNullOrEmpty(this.BranchName) ? " using branch " + this.BranchName : ""
             );
         }
 
         protected override void Execute()
         {
-            string triggerUrl = string.Format("action.html?add2Queue={0}{1}", this.BuildConfigurationId, this.AdditionalParameters);
+            var configurer = this.GetExtensionConfigurer();
+            string branch = this.GetBranchName(configurer);
+            if (branch != null) 
+                this.LogDebug("Using branch: " + branch);
+
+            string triggerUrl = string.Format(
+                "action.html?add2Queue={0}{1}{2}", 
+                this.BuildConfigurationId, 
+                branch != null ? string.Format("&branchName={0}", Uri.EscapeDataString(this.BranchName)) : "",
+                this.AdditionalParameters);
             
-            using (var client = new TeamCityWebClient(this.GetExtensionConfigurer()))
+            using (var client = new TeamCityWebClient(configurer))
             {
-                LogDebug("Triggering build of configuration {0} at {1}", this.BuildConfigurationId, GetExtensionConfigurer().BaseUrl + triggerUrl);
+                this.LogDebug("Triggering build of configuration {0} at {1}", this.BuildConfigurationId, GetExtensionConfigurer().BaseUrl + triggerUrl);
                 client.DownloadString(triggerUrl);
 
-                LogInformation("Build of {0} was triggered successfully.", this.BuildConfigurationId);
+                this.LogInformation("Build of {0} was triggered successfully.", this.BuildConfigurationId);
 
                 if (!this.WaitForCompletion) 
                     return;
 
-                Thread.Sleep(3000); // give TeamCity some time to create the build
+                Thread.Sleep(1000); // give TeamCity a second to create the build
 
-                string getLatestBuildUrl = string.Format("app/rest/builds?locator=buildType:{0},count:1,running:true", this.BuildConfigurationId);
+                string getLatestBuildUrl = string.Format("app/rest/builds?locator=buildType:{0},count:1,running:true{1}", this.BuildConfigurationId, branch != null ? ",branch:" + Uri.EscapeDataString(branch) : "");
                 string getLatestBuildResponse = client.DownloadString(getLatestBuildUrl);
                 string latestBuildId = ParseBuildId(getLatestBuildResponse);
                 if (latestBuildId == null)
                 {
-                    LogError("BuildMaster has triggered a build in TeamCity, but TeamCity indicates that there are no builds running at this time, therefore BuildMaster cannot wait until the build completes.");
+                    this.LogError("BuildMaster has triggered a build in TeamCity, but TeamCity indicates that there are no builds running at this time, therefore BuildMaster cannot wait until the build completes.");
                     return;
                 }
 
@@ -95,25 +111,37 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                     string getBuildStatusResponse = client.DownloadString(getBuildStatusUrl);
                     buildStatus = new TeamCityBuildStatus(getBuildStatusResponse);
 
-                    LogInformation("Building {0} Build #{1} ({2}% Complete)", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.PercentComplete);
+                    this.LogInformation("Building {0} Build #{1} ({2}% Complete)", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.PercentComplete);
 
                     Thread.Sleep(4000);
+                    this.ThrowIfCanceledOrTimeoutExpired();
 
                 } while(buildStatus.IsRunning);
 
                 if (buildStatus.Status == TeamCityBuildStatus.BuildStatuses.Success)
                 {
-                    LogInformation("{0} build #{1} successful. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
+                    this.LogInformation("{0} build #{1} successful. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
                 }
                 else if (buildStatus.Status == TeamCityBuildStatus.BuildStatuses.Failure) 
                 {
-                    LogError("{0} build #{1} failed. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
+                    this.LogError("{0} build #{1} failed. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
                 }
                 else 
                 {
-                    LogError("{0} build #{1} encountered an error. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
+                    this.LogError("{0} build #{1} encountered an error. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
                 }
             }
+        }
+
+        private string GetBranchName(TeamCityConfigurer configurer)
+        {
+            if (!string.IsNullOrEmpty(this.BranchName))
+                return this.BranchName;
+
+            if (!string.IsNullOrEmpty(configurer.DefaultBranchName))
+                return configurer.DefaultBranchName;
+
+            return null;
         }
 
         private static string ParseBuildId(string getBuildResponse)
