@@ -39,6 +39,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.ddlBuildConfigurationId.SelectedValue = template.BuildConfigurationId;
             this.chkArtifactNameLocked.Checked = !template.ArtifactNameLocked;
             this.ddlBuildNumber.SelectedValue = template.BuildNumber;
+            this.txtBranchName.Text = template.BranchName;
             this.chkBranchNameLocked.Checked = !template.BranchNameLocked;
         }
 
