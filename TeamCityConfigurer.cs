@@ -18,13 +18,15 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         /// Gets the configurer based on the profile name, the default configurer if no name is specified, or null.
         /// </summary>
         /// <param name="profileName">Name of the profile.</param>
-        internal static TeamCityConfigurer GetConfigurer(string profileName = null)
+        internal static TeamCityConfigurer GetConfigurer(string profileName = null, int? configurerId = null)
         {
             var profiles = StoredProcs
                 .ExtensionConfiguration_GetConfigurations(TeamCityConfigurer.ConfigurerName)
                 .Execute();
 
-            var configurer = profiles.FirstOrDefault(p => string.Equals(profileName, p.Profile_Name, StringComparison.OrdinalIgnoreCase));
+            var configurer = profiles.FirstOrDefault(
+                p => p.ExtensionConfiguration_Id == configurerId || string.Equals(profileName, p.Profile_Name, StringComparison.OrdinalIgnoreCase)
+            );
             
             if (configurer == null)
                 configurer = profiles.FirstOrDefault(p => p.Default_Indicator.Equals(Domains.YN.Yes));

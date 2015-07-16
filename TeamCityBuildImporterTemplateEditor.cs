@@ -67,7 +67,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.ddlBuildConfigurationId.Init +=
                 (s, e) =>
                 {
-                    this.ddlBuildConfigurationId.FillItems(TeamCityConfigurer.GetConfigurer());
+                    int? configurerId = this.TryGetConfigurerId();
+                    this.ddlBuildConfigurationId.FillItems(TeamCityConfigurer.GetConfigurer(configurerId: configurerId));
                 };
 
             this.ddlBuildNumber = new ComboSelect();
@@ -88,6 +89,23 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                     HelpText = "The branch used to get the artifact, typically used in conjunction with predefined constant build numbers."
                 }
             );
+        }
+
+        /// <summary>
+        /// This is a hack to find the selected configurer ID since it is not exposed via the SDK at the moment...
+        /// </summary>
+        private int? TryGetConfigurerId()
+        {
+            try
+            {
+                var ddlExtensionConfigurer = this.Page.FindControl("ddlExtensionConfigurer") as DropDownList;
+                if (ddlExtensionConfigurer != null)
+                    return InedoLib.Util.Int.ParseN(ddlExtensionConfigurer.SelectedValue);
+            }
+            catch
+            {
+            }
+            return null;
         }
     }
 }
