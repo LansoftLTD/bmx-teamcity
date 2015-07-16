@@ -10,7 +10,6 @@ using Inedo.BuildMaster.Extensibility.Agents;
 using Inedo.BuildMaster.Extensibility.BuildImporters;
 using Inedo.BuildMaster.Files;
 using Inedo.BuildMaster.Web;
-using Inedo.Diagnostics;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
@@ -32,12 +31,12 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         [Persistent]
         public string BranchName { get; set; }
 
-        string ICustomBuildNumberProvider.BuildNumber 
+        string ICustomBuildNumberProvider.BuildNumber
         {
-            get 
+            get
             {
                 return GetActualBuildNumber(this.BuildNumber);
-            } 
+            }
         }
 
         public new TeamCityConfigurer GetExtensionConfigurer()
@@ -55,7 +54,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 this.LogDebug("Branch name was specified: " + branchName);
                 relativeUrl += "?branch=" + Uri.EscapeDataString(this.BranchName);
             }
-            
+
             this.LogDebug("Importing TeamCity artifact \"{0}\" from {1}...", this.ArtifactName, this.GetExtensionConfigurer().BaseUrl + relativeUrl);
 
             string tempFile;
@@ -68,11 +67,11 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                     client.DownloadFile(relativeUrl, tempFile);
                 }
                 catch (WebException wex)
-                { 
+                {
                     var response = wex.Response as HttpWebResponse;
                     if (response != null && response.StatusCode == HttpStatusCode.NotFound)
                         this.LogWarning("The TeamCity request returned a 404 - this could mean that the branch name, build number, or build configuration is invalid.");
-                    
+
                     throw;
                 }
             }
@@ -109,24 +108,15 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         private string GetActualBuildNumber(string buildNumber)
         {
-            if (InedoLib.Util.Int.ParseN(buildNumber) != null)
+            string apiUrl = this.TryGetPredefinedConstantBuildNumberApiUrl(buildNumber);
+            if (apiUrl == null)
+            {
+                this.LogDebug("Using explicit build number: {0}", buildNumber);
                 return buildNumber;
-            
+            }
+
             this.LogDebug("Build number is the predefined constant \"{0}\", resolving...", buildNumber);
 
-            string apiUrl;
-            switch (buildNumber)
-            {
-                case "lastPinned":
-                    apiUrl = string.Format("app/rest/builds/buildType:{0},running:false,pinned:true,count:1", Uri.EscapeDataString(this.BuildConfigurationId));
-                    break;
-                case "lastFinished":
-                    apiUrl = string.Format("app/rest/builds/buildType:{0},running:false,count:1", Uri.EscapeDataString(this.BuildConfigurationId));
-                    break;
-                default: // lastSuccessful
-                    apiUrl = string.Format("app/rest/builds/buildType:{0},running:false,status:success,count:1", Uri.EscapeDataString(this.BuildConfigurationId));
-                    break;
-            }
             try
             {
                 var configurer = this.GetExtensionConfigurer();
@@ -146,6 +136,20 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 this.LogError("Could not parse actual build number from TeamCity. Exception details: {0}", ex);
                 return null;
             }
+        }
+
+        private string TryGetPredefinedConstantBuildNumberApiUrl(string buildNumber)
+        {
+            if (string.Equals(buildNumber, "lastSuccessful", StringComparison.OrdinalIgnoreCase))
+                return string.Format("app/rest/builds/buildType:{0},running:false,status:success,count:1", Uri.EscapeDataString(this.BuildConfigurationId));
+
+            if (string.Equals(buildNumber, "lastPinned", StringComparison.OrdinalIgnoreCase))
+                return string.Format("app/rest/builds/buildType:{0},running:false,pinned:true,count:1", Uri.EscapeDataString(this.BuildConfigurationId));
+
+            if (string.Equals(buildNumber, "lastFinished", StringComparison.OrdinalIgnoreCase))
+                return string.Format("app/rest/builds/buildType:{0},running:false,count:1", Uri.EscapeDataString(this.BuildConfigurationId));
+
+            return null;
         }
 
         private string GetBranchName(TeamCityConfigurer configurer)
