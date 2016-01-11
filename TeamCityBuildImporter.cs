@@ -10,6 +10,8 @@ using Inedo.BuildMaster.Extensibility.Agents;
 using Inedo.BuildMaster.Extensibility.BuildImporters;
 using Inedo.BuildMaster.Files;
 using Inedo.BuildMaster.Web;
+using Inedo.Diagnostics;
+using Inedo.IO;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
@@ -83,7 +85,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                     context.ReleaseNumber,
                     context.BuildNumber,
                     context.DeployableId,
-                    Util.Path2.GetFileName(this.ArtifactName)),
+                    PathEx.GetFileName(this.ArtifactName)),
                 Util.Agents.CreateLocalAgent().GetService<IFileOperationsExecuter>(),
                 new FileEntryInfo(this.ArtifactName, tempFile)
             );

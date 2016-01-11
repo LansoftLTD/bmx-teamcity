@@ -3,6 +3,7 @@ using Inedo.BuildMaster;
 using Inedo.BuildMaster.Data;
 using Inedo.BuildMaster.Extensibility.Recipes;
 using Inedo.BuildMaster.Web;
+using Inedo.IO;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
@@ -67,7 +68,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             Util.Recipes.AddAction(actionGroupId, 1, Util.Recipes.Munging.MungeCoreExAction(
                 "Inedo.BuildMaster.Extensibility.Actions.Artifacts.DeployArtifactAction", new
                 {
-                    ArtifactName = Util.Path2.GetFileName(this.ArtifactName),
+                    ArtifactName = PathEx.GetFileName(this.ArtifactName),
                     DoNotClearTargetDirectory = false
                 })
             );
