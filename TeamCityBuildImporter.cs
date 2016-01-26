@@ -79,24 +79,24 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                         throw;
                     }
                 }
+
+                this.LogInformation("Importing artifact into BuildMaster...");
+                ArtifactBuilder.ImportZip(
+                    new ArtifactIdentifier(
+                        context.ApplicationId,
+                        context.ReleaseNumber,
+                        context.BuildNumber,
+                        context.DeployableId,
+                        PathEx.GetFileName(this.ArtifactName)),
+                    Util.Agents.CreateLocalAgent().GetService<IFileOperationsExecuter>(),
+                    new FileEntryInfo(this.ArtifactName, tempFile)
+                );
             }
             finally
             {
                 if (tempFile != null)
                     FileEx.Delete(tempFile);
             }
-
-            this.LogInformation("Importing artifact into BuildMaster...");
-            ArtifactBuilder.ImportZip(
-                new ArtifactIdentifier(
-                    context.ApplicationId,
-                    context.ReleaseNumber,
-                    context.BuildNumber,
-                    context.DeployableId,
-                    PathEx.GetFileName(this.ArtifactName)),
-                Util.Agents.CreateLocalAgent().GetService<IFileOperationsExecuter>(),
-                new FileEntryInfo(this.ArtifactName, tempFile)
-            );
 
             string teamCityBuildNumber = this.GetActualBuildNumber(this.BuildNumber);
             this.LogDebug("TeamCity build number resolved to {0}, creating $TeamCityBuildNumber variable...", teamCityBuildNumber);
