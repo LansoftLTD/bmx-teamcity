@@ -59,23 +59,31 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
             this.LogDebug("Importing TeamCity artifact \"{0}\" from {1}...", this.ArtifactName, this.GetExtensionConfigurer().BaseUrl + relativeUrl);
 
-            string tempFile;
-            using (var client = new TeamCityWebClient(configurer))
+            string tempFile = null;
+            try
             {
-                tempFile = Path.GetTempFileName();
-                this.LogDebug("Downloading temp file to \"{0}\"...", tempFile);
-                try
+                using (var client = new TeamCityWebClient(configurer))
                 {
-                    client.DownloadFile(relativeUrl, tempFile);
-                }
-                catch (WebException wex)
-                {
-                    var response = wex.Response as HttpWebResponse;
-                    if (response != null && response.StatusCode == HttpStatusCode.NotFound)
-                        this.LogWarning("The TeamCity request returned a 404 - this could mean that the branch name, build number, or build configuration is invalid.");
+                    tempFile = Path.GetTempFileName();
+                    this.LogDebug("Downloading temp file to \"{0}\"...", tempFile);
+                    try
+                    {
+                        client.DownloadFile(relativeUrl, tempFile);
+                    }
+                    catch (WebException wex)
+                    {
+                        var response = wex.Response as HttpWebResponse;
+                        if (response != null && response.StatusCode == HttpStatusCode.NotFound)
+                            this.LogWarning("The TeamCity request returned a 404 - this could mean that the branch name, build number, or build configuration is invalid.");
 
-                    throw;
+                        throw;
+                    }
                 }
+            }
+            finally
+            {
+                if (tempFile != null)
+                    FileEx.Delete(tempFile);
             }
 
             this.LogInformation("Importing artifact into BuildMaster...");
