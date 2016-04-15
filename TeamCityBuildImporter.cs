@@ -1,24 +1,24 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Xml.Linq;
 using Inedo.BuildMaster;
 using Inedo.BuildMaster.Artifacts;
 using Inedo.BuildMaster.Data;
-using Inedo.BuildMaster.Extensibility;
 using Inedo.BuildMaster.Extensibility.Agents;
 using Inedo.BuildMaster.Extensibility.BuildImporters;
 using Inedo.BuildMaster.Files;
 using Inedo.BuildMaster.Web;
 using Inedo.Diagnostics;
 using Inedo.IO;
+using Inedo.Serialization;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
-    [BuildImporterProperties(
-        "TeamCity",
-        "Imports artifacts from a build in TeamCity.",
-        typeof(TeamCityBuildImporterTemplate))]
+    [DisplayName("TeamCity")]
+    [Description("Imports artifacts from a build in TeamCity.")]
+    [BuildImporterTemplate(typeof(TeamCityBuildImporterTemplate))]
     [CustomEditor(typeof(TeamCityBuildImporterEditor))]
     public sealed class TeamCityBuildImporter : BuildImporterBase, ICustomBuildNumberProvider
     {
@@ -33,18 +33,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         [Persistent]
         public string BranchName { get; set; }
 
-        string ICustomBuildNumberProvider.BuildNumber
-        {
-            get
-            {
-                return GetActualBuildNumber(this.BuildNumber);
-            }
-        }
+        string ICustomBuildNumberProvider.BuildNumber => GetActualBuildNumber(this.BuildNumber);
 
-        public new TeamCityConfigurer GetExtensionConfigurer()
-        {
-            return (TeamCityConfigurer)base.GetExtensionConfigurer();
-        }
+        public new TeamCityConfigurer GetExtensionConfigurer() => (TeamCityConfigurer)base.GetExtensionConfigurer();
 
         public override void Import(IBuildImporterContext context)
         {
@@ -101,19 +92,20 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             string teamCityBuildNumber = this.GetActualBuildNumber(this.BuildNumber);
             this.LogDebug("TeamCity build number resolved to {0}, creating $TeamCityBuildNumber variable...", teamCityBuildNumber);
 
-            StoredProcs.Variables_CreateOrUpdateVariableDefinition(
+            DB.Variables_CreateOrUpdateVariableDefinition(
                 "TeamCityBuildNumber",
-                null,
-                null,
-                null,
-                context.ApplicationId,
-                null,
-                context.ReleaseNumber,
-                context.BuildNumber,
-                null,
-                teamCityBuildNumber,
-                Domains.YN.No
-              ).Execute();
+                Application_Id: context.ApplicationId,
+                Release_Number: context.ReleaseNumber,
+                Build_Number: context.BuildNumber,
+                Value_Text: teamCityBuildNumber,
+                Sensitive_Indicator: false,
+                Environment_Id: null,
+                Server_Id: null,
+                ApplicationGroup_Id: null,
+                Execution_Id: null,
+                Promotion_Id: null,
+                Deployable_Id: null
+            );
         }
 
         private string GetActualBuildNumber(string buildNumber)

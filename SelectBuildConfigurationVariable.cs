@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.ComponentModel;
 using Inedo.BuildMaster.Extensibility.Variables;
-using Inedo.BuildMaster;
-using System.ComponentModel;
 using Inedo.BuildMaster.Web;
+using Inedo.Serialization;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
-    [VariableProperties("TeamCity Build Configuration", "Allows selection of a Build Configuration from a TeamCity Instance")]
+    [DisplayName("TeamCity Build Configuration")]
+    [Description("Allows selection of a Build Configuration from a TeamCity instance.")]
     [CustomSetter(typeof(SelectBuildConfigurationVariableSetter))]
     public sealed class SelectBuildConfigurationVariable : VariableBase
     {
@@ -18,7 +15,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         [Category("Configuration")]
         [Description("When set, uses the specified configuration TeamCity profile instead of the default. This can be important when you have multiple TeamCity instances configured within BuildMaster.")]
         public string ConfigurationProfileName { get; set; }
-        
+
         [Persistent]
         [DisplayName("Project Name Filter")]
         [Category("Project")]

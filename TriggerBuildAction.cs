@@ -1,70 +1,34 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Threading;
 using System.Xml;
 using Inedo.BuildMaster;
-using Inedo.BuildMaster.Extensibility.Actions;
 using Inedo.BuildMaster.Web;
+using Inedo.Serialization;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
-    /// <summary>
-    /// Triggers a build on a TeamCity server.
-    /// </summary>
-    [ActionProperties(
-        "Trigger TeamCity Build",
-        "Triggers a build in TeamCity using the specified build configuration ID.",
-        DefaultToLocalServer = true)]
+    [DisplayName("Trigger TeamCity Build")]
+    [Description("Triggers a build in TeamCity using the specified build configuration ID.")]
     [CustomEditor(typeof(TriggerBuildActionEditor))]
     [Tag(Tags.ContinuousIntegration)]
     public sealed class TriggerBuildAction : TeamCityActionBase
     {
-        /// <summary>
-        /// Gets or sets the build configuration id.
-        /// </summary>
         [Persistent]
         public string BuildConfigurationId { get; set; }
-
-        /// <summary>
-        /// Gets or sets the additional parameters.
-        /// </summary>
         [Persistent]
         public string AdditionalParameters { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether [wait until complete].
-        /// </summary>
         [Persistent]
         public bool WaitForCompletion { get; set; }
-
-        /// <summary>
-        /// Gets or sets the name of the branch.
-        /// </summary>
         [Persistent]
         public string BranchName { get; set; }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="TriggerBuildAction"/> class.
-        /// </summary>
-        public TriggerBuildAction()
-        {
-        }
-
-        /// <summary>
-        /// Returns a <see cref="System.String"/> that represents this instance.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="System.String"/> that represents this instance.
-        /// </returns>
-        /// <remarks>
-        /// This should return a user-friendly string describing what the Action does
-        /// and the state of its important persistent properties.
-        /// </remarks>
         public override string ToString()
         {
             return string.Format(
-                "Triggers a build of the configuration \"{0}\" in TeamCity{1}{2}.", 
+                "Triggers a build of the configuration \"{0}\" in TeamCity{1}{2}.",
                 this.BuildConfigurationId,
-                Util.ConcatNE(" with the additional parameters \"", this.AdditionalParameters ,"\""),
+                Util.ConcatNE(" with the additional parameters \"", this.AdditionalParameters, "\""),
                 !string.IsNullOrEmpty(this.BranchName) ? " using branch " + this.BranchName : ""
             );
         }
@@ -73,15 +37,15 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             var configurer = this.GetExtensionConfigurer();
             string branch = this.GetBranchName(configurer);
-            if (branch != null) 
+            if (branch != null)
                 this.LogDebug("Using branch: " + branch);
 
             string triggerUrl = string.Format(
-                "action.html?add2Queue={0}{1}{2}", 
-                this.BuildConfigurationId, 
+                "action.html?add2Queue={0}{1}{2}",
+                this.BuildConfigurationId,
                 branch != null ? string.Format("&branchName={0}", Uri.EscapeDataString(this.BranchName)) : "",
                 this.AdditionalParameters);
-            
+
             using (var client = new TeamCityWebClient(configurer))
             {
                 this.LogDebug("Triggering build of configuration {0} at {1}", this.BuildConfigurationId, GetExtensionConfigurer().BaseUrl + triggerUrl);
@@ -89,7 +53,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
                 this.LogInformation("Build of {0} was triggered successfully.", this.BuildConfigurationId);
 
-                if (!this.WaitForCompletion) 
+                if (!this.WaitForCompletion)
                     return;
 
                 Thread.Sleep(1000); // give TeamCity a second to create the build
@@ -106,7 +70,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 string getBuildStatusUrl = string.Format("app/rest/builds/id:{0}", latestBuildId);
 
                 TeamCityBuildStatus buildStatus;
-                do 
+                do
                 {
                     string getBuildStatusResponse = client.DownloadString(getBuildStatusUrl);
                     buildStatus = new TeamCityBuildStatus(getBuildStatusResponse);
@@ -116,17 +80,17 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                     Thread.Sleep(4000);
                     this.ThrowIfCanceledOrTimeoutExpired();
 
-                } while(buildStatus.IsRunning);
+                } while (buildStatus.IsRunning);
 
                 if (buildStatus.Status == TeamCityBuildStatus.BuildStatuses.Success)
                 {
                     this.LogInformation("{0} build #{1} successful. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
                 }
-                else if (buildStatus.Status == TeamCityBuildStatus.BuildStatuses.Failure) 
+                else if (buildStatus.Status == TeamCityBuildStatus.BuildStatuses.Failure)
                 {
                     this.LogError("{0} build #{1} failed. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
                 }
-                else 
+                else
                 {
                     this.LogError("{0} build #{1} encountered an error. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
                 }
@@ -207,8 +171,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 this.StatusText = doc.SelectSingleNode("/build/statusText").InnerText;
                 var runningAttr = doc.SelectSingleNode("/build/@running");
                 this.IsRunning = runningAttr != null && bool.Parse(runningAttr.Value);
-                this.PercentComplete = this.IsRunning 
-                    ? int.Parse(doc.SelectSingleNode("/build/running-info/@percentageComplete").Value) 
+                this.PercentComplete = this.IsRunning
+                    ? int.Parse(doc.SelectSingleNode("/build/running-info/@percentageComplete").Value)
                     : 100;
                 this.ProjectName = doc.SelectSingleNode("/build/buildType/@projectName").Value;
             }

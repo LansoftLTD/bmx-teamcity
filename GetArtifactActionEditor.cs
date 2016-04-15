@@ -1,6 +1,5 @@
 ﻿using System.Web.UI.WebControls;
 using Inedo.BuildMaster.Extensibility.Actions;
-using Inedo.BuildMaster.Web.Controls;
 using Inedo.BuildMaster.Web.Controls.Extensions;
 using Inedo.Web.Controls;
 
@@ -14,7 +13,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         private ValidatingTextBox txtBranchName;
         private CheckBox chkExtractFilesToTargetDirectory;
 
-        public override bool DisplayTargetDirectory { get { return true; } }
+        public override bool DisplayTargetDirectory => true;
 
         public override void BindToForm(ActionBase extension)
         {
@@ -29,7 +28,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         public override ActionBase CreateFromForm()
         {
-            return new GetArtifactAction()
+            return new GetArtifactAction
             {
                 ArtifactName = this.txtArtifactName.Text,
                 BuildConfigurationId = this.txtBuildConfigurationId.Text,
@@ -41,20 +40,20 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         protected override void CreateChildControls()
         {
-            this.txtArtifactName = new ValidatingTextBox() { Required = true };
-            this.txtBuildConfigurationId = new ValidatingTextBox() { Required = true };
-            this.txtBuildNumber = new ValidatingTextBox() { Required = true };
-            this.txtBranchName = new ValidatingTextBox() { DefaultText = "default" };
-            this.chkExtractFilesToTargetDirectory = new CheckBox() { Text = "Extract files in artifact to target directory" };
+            this.txtArtifactName = new ValidatingTextBox { Required = true };
+            this.txtBuildConfigurationId = new ValidatingTextBox { Required = true };
+            this.txtBuildNumber = new ValidatingTextBox { Required = true };
+            this.txtBranchName = new ValidatingTextBox { DefaultText = "default" };
+            this.chkExtractFilesToTargetDirectory = new CheckBox { Text = "Extract files in artifact to target directory" };
 
             this.Controls.Add(
                 new SlimFormField("Artifact name:", this.txtArtifactName)
                 {
-                    HelpText = HelpText.FromHtml("The name of artifact, for example: <br />\"ideaIC-118.SNAPSHOT.win.zip\". This value can also take a form of \"artifactName!archivePath\" for reading archive's content")
+                    HelpText = new LiteralHtml("The name of artifact, for example: <br />\"ideaIC-118.SNAPSHOT.win.zip\". This value can also take a form of \"artifactName!archivePath\" for reading archive's content", false)
                 },
                 new SlimFormField("Build configuration ID:", this.txtBuildConfigurationId)
                 {
-                    HelpText = HelpText.FromHtml("This value can be found in a browser address bar when corresponding configuration is browsed within TeamCity. <br /><br />As an example, teamcity.jetbrains.com/viewLog.html?buildId=64797&buildTypeId=<strong>bt343</strong>&tab=...")
+                    HelpText = new LiteralHtml("This value can be found in a browser address bar when corresponding configuration is browsed within TeamCity. <br /><br />As an example, teamcity.jetbrains.com/viewLog.html?buildId=64797&buildTypeId=<strong>bt343</strong>&tab=...", false)
                 },
                 new SlimFormField("Build number:", this.txtBuildNumber)
                 {

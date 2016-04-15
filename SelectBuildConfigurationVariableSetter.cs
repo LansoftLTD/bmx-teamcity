@@ -1,12 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Inedo.Web.Controls;
 using Inedo.BuildMaster.Web.Controls.Extensions;
-using System.Net;
-using System.Xml.Linq;
-using System.Web.UI.WebControls;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
@@ -16,7 +9,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             this.OptionGroupSeparator = ":";
         }
-
 
         string IVariableSetter.VariableValue
         {
@@ -33,9 +25,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         void IVariableSetter<SelectBuildConfigurationVariable>.BindToVariable(SelectBuildConfigurationVariable variable, string defaultValue)
         {
             if (variable == null) throw new ArgumentNullException("variable");
-            
+
             this.FillItems(TeamCityConfigurer.GetConfigurer(variable.ConfigurationProfileName));
-            this.SelectedValue = InedoLib.Util.CoalesceStr(variable.Value, defaultValue);
+            this.SelectedValue = AH.CoalesceString(variable.Value, defaultValue);
         }
     }
 }

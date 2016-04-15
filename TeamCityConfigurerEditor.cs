@@ -11,18 +11,10 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         private ValidatingTextBox txtDefaultBranchName;
         private PasswordTextBox txtPassword;
 
-        /// <summary>
-        /// Initializes the default values.
-        /// </summary>
         public override void InitializeDefaultValues()
         {
-            BindToForm(new TeamCityConfigurer());
+            this.BindToForm(new TeamCityConfigurer());
         }
-
-        /// <summary>
-        /// Binds to form.
-        /// </summary>
-        /// <param name="extension">The extension.</param>
         public override void BindToForm(ExtensionConfigurerBase extension)
         {
             var configurer = (TeamCityConfigurer)extension;
@@ -35,11 +27,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 this.txtPassword.Text = configurer.Password;
             }
         }
-
-        /// <summary>
-        /// Creates from form.
-        /// </summary>
-        /// <returns></returns>
         public override ExtensionConfigurerBase CreateFromForm()
         {
             var configurer = new TeamCityConfigurer()
@@ -58,17 +45,17 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         protected override void CreateChildControls()
         {
-            this.txtServerUrl = new ValidatingTextBox() { Required = true };
+            this.txtServerUrl = new ValidatingTextBox { Required = true };
             this.txtUsername = new ValidatingTextBox();
             this.txtPassword = new PasswordTextBox();
-            this.txtDefaultBranchName = new ValidatingTextBox() { DefaultText = "TeamCity-defined" };
+            this.txtDefaultBranchName = new ValidatingTextBox { DefaultText = "TeamCity-defined" };
 
             this.Controls.Add(
                 new SlimFormField("TeamCity server URL:", this.txtServerUrl)
                 {
                     HelpText = "Enter the URL of the TeamCity server, typically: http://teamcityserver"
                 },
-                new SlimFormField("Username:", this.txtUsername)
+                new SlimFormField("User name:", this.txtUsername)
                 {
                     HelpText = "If you wish to connect to the TeamCity server with HTTP Authentication, please enter the credentials. Leaving the username field blank will connect using guest authentication."
                 },

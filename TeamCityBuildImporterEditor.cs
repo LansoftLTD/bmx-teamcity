@@ -26,9 +26,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         protected override void CreateChildControls()
         {
-            this.txtArtifactName = new ValidatingTextBox 
-            { 
-                Required = true, 
+            this.txtArtifactName = new ValidatingTextBox
+            {
+                Required = true,
                 Enabled = !this.Template.ArtifactNameLocked,
                 Text = this.Template.ArtifactName
             };
@@ -39,7 +39,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 DefaultText = "Default"
             };
             this.ctlBuildNumber = new BuildNumberPicker
-            { 
+            {
                 Value = Util.CoalesceStr(this.Template.BuildNumber, "lastSuccessful"),
                 Enabled = string.IsNullOrEmpty(this.Template.BuildNumber),
                 BuildConfigurationId = this.Template.BuildConfigurationId,

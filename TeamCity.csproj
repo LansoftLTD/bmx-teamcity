@@ -10,7 +10,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Inedo.BuildMasterExtensions.TeamCity</RootNamespace>
     <AssemblyName>TeamCity</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SccProjectName>
     </SccProjectName>
@@ -31,6 +31,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -40,6 +41,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
@@ -48,27 +50,32 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <PlatformTarget>AnyCPU</PlatformTarget>
     <OutputPath>bin\Release\</OutputPath>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BuildMaster.Web.Controls, Version=4.9.5.5, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
-      <HintPath>packages\Inedo.BuildMaster.SDK.4.9\lib\net40\BuildMaster.Web.Controls.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="BuildMasterCore, Version=4.9.5.5, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
-      <HintPath>packages\Inedo.BuildMaster.SDK.4.9\lib\net40\BuildMasterCore.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ICSharpCode.SharpZipLib, Version=0.86.0.518, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+    <Reference Include="BuildMaster.Web.Controls, Version=5.0.0.97, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
+      <HintPath>packages\Inedo.BuildMaster.SDK.5.0\lib\net45\BuildMaster.Web.Controls.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="InedoLib, Version=272.1.0.0, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
-      <HintPath>packages\Inedo.BuildMaster.SDK.4.9\lib\net40\InedoLib.dll</HintPath>
+    <Reference Include="BuildMasterCore, Version=5.0.0.97, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
+      <HintPath>packages\Inedo.BuildMaster.SDK.5.0\lib\net45\BuildMasterCore.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Inedo.ExecutionEngine, Version=23.1.0.0, Culture=neutral, PublicKeyToken=68703f0e52007e75, processorArchitecture=MSIL">
+      <HintPath>packages\Inedo.BuildMaster.SDK.5.0\lib\net45\Inedo.ExecutionEngine.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="InedoLib, Version=370.1.0.0, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
+      <HintPath>packages\Inedo.BuildMaster.SDK.5.0\lib\net45\InedoLib.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -80,10 +87,6 @@
   <ItemGroup>
     <Compile Include="BuildNumberPicker.cs" />
     <Compile Include="SelectBuildConfigurationPicker.cs" />
-    <Compile Include="DeployTeamCityBuildRecipeEditor.cs">
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="DeployTeamCityBuildRecipe.cs" />
     <Compile Include="GetArtifactAction.cs" />
     <Compile Include="GetArtifactActionEditor.cs">
       <SubType>ASPXCodeBehind</SubType>

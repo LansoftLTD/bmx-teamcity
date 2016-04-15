@@ -1,7 +1,7 @@
-﻿using Inedo.BuildMaster;
-using Inedo.BuildMaster.Extensibility;
+﻿using Inedo.BuildMaster.Documentation;
 using Inedo.BuildMaster.Extensibility.BuildImporters;
 using Inedo.BuildMaster.Web;
+using Inedo.Serialization;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
@@ -23,9 +23,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         [Persistent]
         public bool BranchNameLocked { get; set; }
 
-        public override ExtensionComponentDescription GetDescription()
+        public override RichDescription GetDescription()
         {
-            var desc = new ExtensionComponentDescription("Import the ");
+            var desc = new RichDescription("Import the ");
             desc.AppendContent(new Hilite(this.ArtifactName));
             desc.AppendContent(" artifact from TeamCity build configuration ");
             desc.AppendContent(new Hilite(this.BuildConfigurationDisplayName));

@@ -1,7 +1,6 @@
 ﻿using System.Web;
 using System.Web.UI.WebControls;
 using Inedo.BuildMaster.Extensibility.Actions;
-using Inedo.BuildMaster.Web.Controls;
 using Inedo.BuildMaster.Web.Controls.Extensions;
 using Inedo.Web.Controls;
 
@@ -14,10 +13,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         private ValidatingTextBox txtBranchName;
         private CheckBox chkWaitForCompletion;
 
-        /// <summary>
-        /// Binds to form.
-        /// </summary>
-        /// <param name="extension">The extension.</param>
         public override void BindToForm(ActionBase extension)
         {
             var action = (TriggerBuildAction)extension;
@@ -28,13 +23,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.txtBranchName.Text = action.BranchName;
         }
 
-        /// <summary>
-        /// Creates from form.
-        /// </summary>
-        /// <returns></returns>
         public override ActionBase CreateFromForm()
         {
-            return new TriggerBuildAction()
+            return new TriggerBuildAction
             {
                 BuildConfigurationId = this.txtBuildConfigurationId.Text,
                 AdditionalParameters = this.txtAdditionalParameters.Text,
@@ -45,13 +36,13 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         protected override void CreateChildControls()
         {
-            this.txtBuildConfigurationId = new ValidatingTextBox() { Required = true };
+            this.txtBuildConfigurationId = new ValidatingTextBox { Required = true };
 
             this.txtBranchName = new ValidatingTextBox { DefaultText = "Default" };
 
             this.txtAdditionalParameters = new ValidatingTextBox();
 
-            this.chkWaitForCompletion = new CheckBox()
+            this.chkWaitForCompletion = new CheckBox
             {
                 Text = "Wait for build to complete",
                 Checked = true
@@ -60,7 +51,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.Controls.Add(
                 new SlimFormField("Build configuration ID:", this.txtBuildConfigurationId)
                 {
-                    HelpText = HelpText.FromHtml("This value can be found in a browser address bar when corresponding configuration is browsed within TeamCity. <br /><br />As an example, teamcity.jetbrains.com/viewLog.html?buildId=64797&buildTypeId=<strong>bt343</strong>&tab=...")
+                    HelpText = new LiteralHtml("This value can be found in a browser address bar when corresponding configuration is browsed within TeamCity. <br /><br />As an example, teamcity.jetbrains.com/viewLog.html?buildId=64797&buildTypeId=<strong>bt343</strong>&tab=...", false)
                 },
                 new SlimFormField("Branch:", this.txtBranchName)
                 {
@@ -68,7 +59,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 },
                 new SlimFormField("Additional parameters:", this.txtAdditionalParameters)
                 {
-                    HelpText = HelpText.FromHtml("Optionally enter any additional parameters accepted by the TeamCity API in query string format, for example:<br/> " + HttpUtility.HtmlEncode("&name=agent&value=<agentnamevalue>&name=system.name&value=<systemnamevalue>.."))
+                    HelpText = new LiteralHtml("Optionally enter any additional parameters accepted by the TeamCity API in query string format, for example:<br/> " + HttpUtility.HtmlEncode("&name=agent&value=<agentnamevalue>&name=system.name&value=<systemnamevalue>.."), false)
                 },
                 new SlimFormField("Wait for completion:", this.chkWaitForCompletion)
                 {

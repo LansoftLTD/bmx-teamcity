@@ -4,14 +4,12 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 {
     public abstract class TeamCityActionBase : AgentBasedActionBase
     {
-        protected new TeamCityConfigurer GetExtensionConfigurer()
+        protected TeamCityActionBase()
         {
-            return (TeamCityConfigurer)base.GetExtensionConfigurer();
         }
 
-        public sealed override bool IsConfigurerSettingRequired()
-        {
-            return true;
-        }
+        public sealed override bool IsConfigurerSettingRequired() => true;
+
+        protected new TeamCityConfigurer GetExtensionConfigurer() => (TeamCityConfigurer)base.GetExtensionConfigurer();
     }
 }

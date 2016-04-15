@@ -14,7 +14,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         private CheckBox chkArtifactNameLocked;
         private CheckBox chkBranchNameLocked;
         private SelectBuildConfigurationPicker ddlBuildConfigurationId;
-        private ComboSelect ddlBuildNumber;
+        private SelectList ddlBuildNumber;
 
         public TeamCityBuildImporterTemplateEditor()
         {
@@ -72,11 +72,11 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                     this.ddlBuildConfigurationId.FillItems(TeamCityConfigurer.GetConfigurer(configurerId: configurerId));
                 };
 
-            this.ddlBuildNumber = new ComboSelect();
-            this.ddlBuildNumber.Items.Add(new ListItem("Select at build import time", ""));
-            this.ddlBuildNumber.Items.Add(new ListItem("Always use last successful build", "lastSuccessful"));
-            this.ddlBuildNumber.Items.Add(new ListItem("Always use last finished build", "lastFinished"));
-            this.ddlBuildNumber.Items.Add(new ListItem("Always use last pinned build", "lastPinned"));
+            this.ddlBuildNumber = new SelectList();
+            this.ddlBuildNumber.Items.Add(new SelectListItem("Select at build import time", ""));
+            this.ddlBuildNumber.Items.Add(new SelectListItem("Always use last successful build", "lastSuccessful"));
+            this.ddlBuildNumber.Items.Add(new SelectListItem("Always use last finished build", "lastFinished"));
+            this.ddlBuildNumber.Items.Add(new SelectListItem("Always use last pinned build", "lastPinned"));
 
             this.Controls.Add(
                 new SlimFormField("Build configuration:", this.ddlBuildConfigurationId),
@@ -101,7 +101,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             {
                 var ddlExtensionConfigurer = this.Page.FindControl("ddlExtensionConfigurer") as DropDownList;
                 if (ddlExtensionConfigurer != null)
-                    return InedoLib.Util.Int.ParseN(ddlExtensionConfigurer.SelectedValue);
+                    return AH.ParseInt(ddlExtensionConfigurer.SelectedValue);
             }
             catch
             {

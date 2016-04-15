@@ -1,28 +1,20 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using Inedo.BuildMaster;
-using Inedo.BuildMaster.Extensibility.Actions;
+using Inedo.BuildMaster.Documentation;
 using Inedo.BuildMaster.Extensibility.Agents;
 using Inedo.BuildMaster.Web;
+using Inedo.Serialization;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
-    /// <summary>
-    /// Gets an artifact from a TeamCity server.
-    /// </summary>
-    [ActionProperties(
-        "Get TeamCity Artifact",
-        "Gets an artifact from a TeamCity server.",
-        DefaultToLocalServer = true)]
+    [DisplayName("Get TeamCity Artifact")]
+    [Description("Gets an artifact from a TeamCity server.")]
     [CustomEditor(typeof(GetArtifactActionEditor))]
     [Tag(Tags.ContinuousIntegration)]
     public sealed class GetArtifactAction : TeamCityActionBase
     {
-        public GetArtifactAction()
-        {
-            this.ExtractFilesToTargetDirectory = true;
-        }
-
         [Persistent]
         public string ArtifactName { get; set; }
         [Persistent]
@@ -32,21 +24,21 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         [Persistent]
         public string BranchName { get; set; }
         [Persistent]
-        public bool ExtractFilesToTargetDirectory { get; set; }
-        
-        public override ActionDescription GetActionDescription()
+        public bool ExtractFilesToTargetDirectory { get; set; } = true;
+
+        public override ExtendedRichDescription GetActionDescription()
         {
-            return new ActionDescription(
-                new ShortActionDescription("Get TeamCity ", new Hilite(this.ArtifactName), " Artifact "),
-                new LongActionDescription("of build ", 
-                    InedoLib.Util.Int.ParseN(this.BuildNumber) != null ? "#" : "", 
+            return new ExtendedRichDescription(
+                new RichDescription("Get TeamCity ", new Hilite(this.ArtifactName), " Artifact "),
+                new RichDescription("of build ",
+                    AH.ParseInt(this.BuildNumber) != null ? "#" : "",
                     new Hilite(this.BuildNumber),
                     !string.IsNullOrEmpty(this.BranchName) ? " on branch " + this.BranchName : "",
-                    " of the configuration \"", 
-                    this.BuildConfigurationId, 
+                    " of the configuration \"",
+                    this.BuildConfigurationId,
                     "\" and ",
-                    this.ExtractFilesToTargetDirectory ? "deploy its contents" : "copy the artifact", 
-                    " to ", 
+                    this.ExtractFilesToTargetDirectory ? "deploy its contents" : "copy the artifact",
+                    " to ",
                     new DirectoryHilite(this.OverriddenTargetDirectory)
                 )
             );
@@ -55,7 +47,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         protected override void Execute()
         {
             var configurer = this.GetExtensionConfigurer();
-            
+
             string relativeUrl = string.Format("repository/download/{0}/{1}/{2}", this.BuildConfigurationId, this.BuildNumber, this.ArtifactName);
 
             string branchName = this.GetBranchName(configurer);
