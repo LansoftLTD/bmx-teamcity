@@ -12,17 +12,20 @@ using Inedo.BuildMaster.Extensibility;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
-    public class SelectBuildConfigurationPicker : ComboSelect
+    public class SelectBuildConfigurationPicker : SelectList
     {
+        internal Action ExternalInit;
+
         public SelectBuildConfigurationPicker()
         {
-            this.OptionGroupSeparator = ":";
+            this.IsIdRequired = true;
         }
 
-        protected override void OnPreRender(EventArgs e)
+        protected override void Initialize()
         {
-            this.EnsureID();
-            base.OnPreRender(e);
+            base.Initialize();
+            if (this.ExternalInit != null)
+                this.ExternalInit();
         }
 
         internal void FillItems(TeamCityConfigurer configurer)
@@ -46,11 +49,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                         Project = (string)e.Attribute("projectName"),
                         Name = (string)e.Attribute("name")
                     })
-                    .Select(bt => new ListItem
-                    {
-                        Value = bt.Id,
-                        Text = bt.Project + ": " + bt.Name
-                    })
+                    .Select(bt => new SelectListItem(bt.Project + ": " + bt.Name, bt.Id))
                     .ToArray());
             }
         }

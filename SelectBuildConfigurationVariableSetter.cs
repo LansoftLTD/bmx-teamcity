@@ -7,7 +7,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
     {
         public SelectBuildConfigurationVariableSetter()
         {
-            this.OptionGroupSeparator = ":";
         }
 
         string IVariableSetter.VariableValue

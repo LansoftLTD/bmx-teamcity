@@ -4,6 +4,7 @@ using System.Threading;
 using System.Xml;
 using Inedo.BuildMaster;
 using Inedo.BuildMaster.Web;
+using Inedo.Documentation;
 using Inedo.Serialization;
 
 namespace Inedo.BuildMasterExtensions.TeamCity

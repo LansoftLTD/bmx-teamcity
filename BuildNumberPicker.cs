@@ -30,12 +30,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             base.OnPreRender(e);
 
             this.IncludeClientResourceInPage(
-                new JavascriptResource
-                {
-                    ResourcePath = "~/extension-resources/TeamCity/BuildNumberPicker.js?" + typeof(BuildNumberPicker).Assembly.GetName().Version,
-                    Dependencies = { InedoLibCR.select2.select2_js },
-                    CompatibleVersions = { InedoLibCR.Versions.jq171 }
-                }
+                new JavascriptResource("/extension-resources/TeamCity/BuildNumberPicker.js", InedoLibCR.select2)
             );
         }
 
@@ -56,7 +51,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 writer,
                 new
                 {
-                    ajaxUrl = DynamicHttpHandling.GetJavascriptDataUrl<string, int, object>(BuildNumberPicker.GetBuildNumbers),
+                    ajaxUrl = Ajax.GetUrl(new Func<string, int, object>(BuildNumberPicker.GetBuildNumbers)),
                     hiddenFieldSelector = "#" + this.ClientID,
                     buildConfigSelector = this.ControlIdWithBuildConfigurationId != null ? "#" + this.ControlIdWithBuildConfigurationId.ClientID : null,
                     buildConfigId = this.BuildConfigurationId,

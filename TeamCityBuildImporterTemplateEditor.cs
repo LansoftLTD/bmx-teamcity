@@ -1,4 +1,5 @@
-﻿using System.Web.UI.WebControls;
+﻿using System.Linq;
+using System.Web.UI.WebControls;
 using Inedo.BuildMaster.Extensibility.BuildImporters;
 using Inedo.BuildMaster.Web.Controls.Extensions;
 using Inedo.BuildMaster.Web.Controls.Extensions.BuildImporters;
@@ -45,12 +46,14 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         public override BuildImporterTemplateBase CreateFromForm()
         {
+            var selected = this.ddlBuildConfigurationId.Items.FirstOrDefault(i => i.Selected);
+
             return new TeamCityBuildImporterTemplate
             {
                 ArtifactName = this.txtArtifactName.Text,
                 ArtifactNameLocked = !this.chkArtifactNameLocked.Checked,
                 BuildConfigurationId = this.ddlBuildConfigurationId.SelectedValue,
-                BuildConfigurationDisplayName = this.ddlBuildConfigurationId.SelectedItem != null ? this.ddlBuildConfigurationId.SelectedItem.Text : string.Empty,
+                BuildConfigurationDisplayName = selected?.Text ?? string.Empty,
                 BuildNumber = this.ddlBuildNumber.SelectedValue,
                 BranchName = this.txtBranchName.Text,
                 BranchNameLocked = !this.chkBranchNameLocked.Checked
@@ -65,8 +68,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.chkBranchNameLocked = new CheckBox { Text = "Allow selection at build time" };
 
             this.ddlBuildConfigurationId = new SelectBuildConfigurationPicker() { ID = "ddlBuildConfigurationId" };
-            this.ddlBuildConfigurationId.Init +=
-                (s, e) =>
+            this.ddlBuildConfigurationId.ExternalInit = 
+                () =>
                 {
                     int? configurerId = this.TryGetConfigurerId();
                     this.ddlBuildConfigurationId.FillItems(TeamCityConfigurer.GetConfigurer(configurerId: configurerId));

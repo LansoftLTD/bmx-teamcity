@@ -1,4 +1,4 @@
-﻿using Inedo.BuildMaster.Documentation;
+﻿using Inedo.Documentation;
 using Inedo.BuildMaster.Extensibility.BuildImporters;
 using Inedo.BuildMaster.Web;
 using Inedo.Serialization;
