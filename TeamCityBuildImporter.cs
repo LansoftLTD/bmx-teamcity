@@ -78,7 +78,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                         context.ReleaseNumber,
                         context.BuildNumber,
                         context.DeployableId,
-                        PathEx.GetFileName(this.ArtifactName)),
+                        TrimWhitespaceAndZipExtension(this.ArtifactName)
+                    ),
                     Util.Agents.CreateLocalAgent().GetService<IFileOperationsExecuter>(),
                     new FileEntryInfo(this.ArtifactName, tempFile)
                 );
@@ -163,6 +164,15 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 return configurer.DefaultBranchName;
 
             return null;
+        }
+
+        private static string TrimWhitespaceAndZipExtension(string artifactName)
+        {
+            string file = PathEx.GetFileName(artifactName).Trim();
+            if (file.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                return file.Substring(0, file.Length - ".zip".Length);
+            else
+                return file;
         }
     }
 }
