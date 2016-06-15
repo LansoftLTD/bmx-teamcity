@@ -10,8 +10,10 @@ using Inedo.Serialization;
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
     [CustomEditor(typeof(TeamCityConfigurerEditor))]
-    public sealed class TeamCityConfigurer : ExtensionConfigurerBase
+    public sealed class TeamCityConfigurer : ExtensionConfigurerBase, ITeamCityConnectionInfo
     {
+        string ITeamCityConnectionInfo.UserName => this.Username; // Rubbish casing
+
         internal static readonly string ConfigurerName = typeof(TeamCityConfigurer).FullName + "," + typeof(TeamCityConfigurer).Assembly.GetName().Name;
 
         /// <summary>
@@ -62,16 +64,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         /// <summary>
         /// Gets the base URL used for connections to the TeamCity server that incorporates the authentication mechanism.
         /// </summary>
-        public string BaseUrl
-        {
-            get
-            {
-                return string.Format(
-                    "{0}/{1}/",
-                    this.ServerUrl.TrimEnd('/'),
-                    string.IsNullOrEmpty(this.Username) ? "guestAuth" : "httpAuth"
-                );
-            }
-        }
+        public string BaseUrl => $"{this.ServerUrl.TrimEnd('/')}/{(string.IsNullOrEmpty(this.Username) ? "guestAuth" : "httpAuth")}/";
     }
 }

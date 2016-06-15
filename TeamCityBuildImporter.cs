@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Xml.Linq;
+using Inedo.Agents;
 using Inedo.BuildMaster;
 using Inedo.BuildMaster.Artifacts;
 using Inedo.BuildMaster.Data;
@@ -39,58 +40,16 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         public override void Import(IBuildImporterContext context)
         {
-            string relativeUrl = string.Format("repository/download/{0}/{1}/{2}", this.BuildConfigurationId, this.BuildNumber, this.ArtifactName);
             var configurer = this.GetExtensionConfigurer();
-            string branchName = this.GetBranchName(configurer);
-            if (branchName != null)
+            var importer = new TeamCityArtifactImporter(configurer, (ILogger)this, context)
             {
-                this.LogDebug("Branch name was specified: " + branchName);
-                relativeUrl += "?branch=" + Uri.EscapeDataString(this.BranchName);
-            }
-
-            this.LogDebug("Importing TeamCity artifact \"{0}\" from {1}...", this.ArtifactName, this.GetExtensionConfigurer().BaseUrl + relativeUrl);
-
-            string tempFile = null;
-            try
-            {
-                using (var client = new TeamCityWebClient(configurer))
-                {
-                    tempFile = Path.GetTempFileName();
-                    this.LogDebug("Downloading temp file to \"{0}\"...", tempFile);
-                    try
-                    {
-                        client.DownloadFile(relativeUrl, tempFile);
-                    }
-                    catch (WebException wex)
-                    {
-                        var response = wex.Response as HttpWebResponse;
-                        if (response != null && response.StatusCode == HttpStatusCode.NotFound)
-                            this.LogWarning("The TeamCity request returned a 404 - this could mean that the branch name, build number, or build configuration is invalid.");
-
-                        throw;
-                    }
-                }
-
-                this.LogInformation("Importing artifact into BuildMaster...");
-                ArtifactBuilder.ImportZip(
-                    new ArtifactIdentifier(
-                        context.ApplicationId,
-                        context.ReleaseNumber,
-                        context.BuildNumber,
-                        context.DeployableId,
-                        TrimWhitespaceAndZipExtension(this.ArtifactName)
-                    ),
-                    Util.Agents.CreateLocalAgent().GetService<IFileOperationsExecuter>(),
-                    new FileEntryInfo(this.ArtifactName, tempFile)
-                );
-            }
-            finally
-            {
-                if (tempFile != null)
-                    FileEx.Delete(tempFile);
-            }
-
-            string teamCityBuildNumber = this.GetActualBuildNumber(this.BuildNumber);
+                ArtifactName = this.ArtifactName,
+                BranchName = this.GetBranchName(configurer),
+                BuildConfigurationId = this.BuildConfigurationId,
+                BuildNumber = this.BuildNumber
+            };
+            string teamCityBuildNumber = importer.ImportAsync().Result();
+            
             this.LogDebug("TeamCity build number resolved to {0}, creating $TeamCityBuildNumber variable...", teamCityBuildNumber);
 
             DB.Variables_CreateOrUpdateVariableDefinition(
@@ -164,15 +123,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 return configurer.DefaultBranchName;
 
             return null;
-        }
-
-        private static string TrimWhitespaceAndZipExtension(string artifactName)
-        {
-            string file = PathEx.GetFileName(artifactName).Trim();
-            if (file.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                return file.Substring(0, file.Length - ".zip".Length);
-            else
-                return file;
         }
     }
 }

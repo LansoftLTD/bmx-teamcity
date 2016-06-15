@@ -6,6 +6,7 @@ using Inedo.Documentation;
 using Inedo.BuildMaster.Extensibility.Agents;
 using Inedo.BuildMaster.Web;
 using Inedo.Serialization;
+using Inedo.Agents;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
@@ -60,7 +61,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             this.LogDebug("Downloading TeamCity artifact \"{0}\" from {1} to {2}", this.ArtifactName, configurer.BaseUrl + relativeUrl, this.Context.TargetDirectory);
 
             var fileOps = this.Context.Agent.GetService<IFileOperationsExecuter>();
-            var remoteZip = this.Context.Agent.GetService<IRemoteZip>();
 
             string tempFile;
             using (var client = new TeamCityWebClient(configurer))
@@ -79,7 +79,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 );
 
                 this.LogDebug("Extracting TeamCity artifact to {0}...", this.Context.TargetDirectory);
-                remoteZip.ExtractZipFile(remoteTempPath, this.Context.TargetDirectory, true);
+                fileOps.ExtractZipFile(remoteTempPath, this.Context.TargetDirectory, true);
             }
             else
             {

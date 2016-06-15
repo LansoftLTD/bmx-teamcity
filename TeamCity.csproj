@@ -58,24 +58,24 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BuildMaster.Web.Controls, Version=5.0.0.97, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
-      <HintPath>packages\Inedo.BuildMaster.SDK.5.0\lib\net45\BuildMaster.Web.Controls.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="BuildMaster.Web.Controls, Version=5.1.0.7, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
+      <HintPath>packages\Inedo.BuildMaster.SDK.5.1\lib\net45\BuildMaster.Web.Controls.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="BuildMasterCore, Version=5.0.0.97, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
-      <HintPath>packages\Inedo.BuildMaster.SDK.5.0\lib\net45\BuildMasterCore.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="BuildMasterCore, Version=5.1.0.7, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
+      <HintPath>packages\Inedo.BuildMaster.SDK.5.1\lib\net45\BuildMasterCore.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Inedo.ExecutionEngine, Version=23.1.0.0, Culture=neutral, PublicKeyToken=68703f0e52007e75, processorArchitecture=MSIL">
-      <HintPath>packages\Inedo.BuildMaster.SDK.5.0\lib\net45\Inedo.ExecutionEngine.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Inedo.Agents.Client, Version=397.1.0.0, Culture=neutral, PublicKeyToken=9de986a2f8db80fc, processorArchitecture=MSIL">
+      <HintPath>packages\Inedo.BuildMaster.SDK.5.1\lib\net45\Inedo.Agents.Client.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="InedoLib, Version=370.1.0.0, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
-      <HintPath>packages\Inedo.BuildMaster.SDK.5.0\lib\net45\InedoLib.dll</HintPath>
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Inedo.ExecutionEngine, Version=33.1.0.0, Culture=neutral, PublicKeyToken=68703f0e52007e75, processorArchitecture=MSIL">
+      <HintPath>packages\Inedo.BuildMaster.SDK.5.1\lib\net45\Inedo.ExecutionEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="InedoLib, Version=397.1.0.0, Culture=neutral, PublicKeyToken=112cfb71329714a6, processorArchitecture=MSIL">
+      <HintPath>packages\Inedo.BuildMaster.SDK.5.1\lib\net45\InedoLib.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -86,6 +86,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BuildNumberPicker.cs" />
+    <Compile Include="Credentials\TeamCityCredentials.cs" />
+    <Compile Include="ITeamCityConnectionInfo.cs" />
+    <Compile Include="Operations\ImportTeamCityArtifactOperation.cs" />
+    <Compile Include="Operations\QueueTeamCityBuildOperation.cs" />
+    <Compile Include="Operations\TeamCityOperation.cs" />
     <Compile Include="SelectBuildConfigurationPicker.cs" />
     <Compile Include="GetArtifactAction.cs" />
     <Compile Include="GetArtifactActionEditor.cs">
@@ -95,6 +100,7 @@
     <Compile Include="SelectBuildConfigurationVariable.cs" />
     <Compile Include="SelectBuildConfigurationVariableSetter.cs" />
     <Compile Include="TeamCityActionBase.cs" />
+    <Compile Include="TeamCityArtifactImporter.cs" />
     <Compile Include="TeamCityBuildImporter.cs" />
     <Compile Include="TeamCityBuildImporterEditor.cs">
       <SubType>ASPXCodeBehind</SubType>
@@ -103,6 +109,7 @@
     <Compile Include="TeamCityBuildImporterTemplateEditor.cs">
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
+    <Compile Include="TeamCityBuildQueuer.cs" />
     <Compile Include="TeamCityConfigurer.cs" />
     <Compile Include="TeamCityConfigurerEditor.cs">
       <SubType>ASPXCodeBehind</SubType>
@@ -123,6 +130,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if exist $(SolutionDir) cmd /c "del $(SolutionDir)..\..\BuildMaster\ExtensionLib\$(TargetName).bmx"
