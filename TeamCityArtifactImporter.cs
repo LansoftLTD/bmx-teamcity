@@ -114,7 +114,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
             this.Logger.LogInformation(this.ArtifactName + " artifact imported.");
             
-            return await this.GetActualBuildNumber();
+            return await this.GetActualBuildNumber().ConfigureAwait(false);
         }
 
         private async Task<string> GetActualBuildNumber()

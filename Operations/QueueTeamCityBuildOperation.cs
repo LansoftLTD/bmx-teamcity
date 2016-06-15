@@ -41,7 +41,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
         [PlaceholderText("true")]
         public bool WaitForCompletion { get; set; } = true;
 
-        public async override Task ExecuteAsync(IOperationExecutionContext context)
+        public override Task ExecuteAsync(IOperationExecutionContext context)
         {
             this.buildQueuer = new TeamCityBuildQueuer((ITeamCityConnectionInfo)this, (ILogger)this, context)
             {
@@ -52,7 +52,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
                 BranchName = this.BranchName
             };
 
-            await this.buildQueuer.QueueBuildAsync(context.CancellationToken, logProgressToExecutionLog: false);
+            return this.buildQueuer.QueueBuildAsync(context.CancellationToken, logProgressToExecutionLog: false);
         }
 
         public override OperationProgress GetProgress()
