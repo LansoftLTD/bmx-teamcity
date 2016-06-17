@@ -97,8 +97,8 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                     string getBuildStatusResponse = await client.DownloadStringTaskAsync(getBuildStatusUrl).ConfigureAwait(false);
                     buildStatus = new TeamCityBuildStatus(getBuildStatusResponse);
                     
-                    this.progressPercent = Interlocked.Exchange(ref this.progressPercent, buildStatus.PercentComplete);
-                    this.progressMessage = Interlocked.Exchange(ref this.progressMessage, $"Building {buildStatus.ProjectName} Build #{buildStatus.BuildNumber} ({buildStatus.PercentComplete}% Complete)");
+                    this.progressPercent = buildStatus.PercentComplete;
+                    this.progressMessage = $"Building {buildStatus.ProjectName} Build #{buildStatus.BuildNumber} ({buildStatus.PercentComplete}% Complete)";
 
                     if (logProgressToExecutionLog)
                         this.Logger.LogInformation(this.progressMessage);
