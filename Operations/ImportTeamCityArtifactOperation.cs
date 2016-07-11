@@ -61,6 +61,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
                 Value_Text: teamCityBuildNumber,
                 Sensitive_Indicator: false,
                 Environment_Id: null,
+                ServerRole_Id: null,
                 Server_Id: null,
                 ApplicationGroup_Id: null,
                 Execution_Id: null,
