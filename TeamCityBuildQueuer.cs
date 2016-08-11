@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -96,7 +97,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 {
                     string getBuildStatusResponse = await client.DownloadStringTaskAsync(getBuildStatusUrl).ConfigureAwait(false);
                     buildStatus = new TeamCityBuildStatus(getBuildStatusResponse);
-                    
+
                     this.progressPercent = buildStatus.PercentComplete;
                     this.progressMessage = $"Building {buildStatus.ProjectName} Build #{buildStatus.BuildNumber} ({buildStatus.PercentComplete}% Complete)";
 
@@ -131,12 +132,16 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 string result = await client.DownloadStringTaskAsync("app/rest/buildTypes").ConfigureAwait(false);
                 var doc = XDocument.Parse(result);
                 var buildConfigurations = from e in doc.Element("buildTypes").Elements("buildType")
-                                          let buildConfigurationId = (string)e.Attribute("id")
-                                          let projectName = (string)e.Attribute("projectName")
-                                          let buildConfigurationName = (string)e.Attribute("name")
-                                          where string.Equals(projectName, this.ProjectName, StringComparison.OrdinalIgnoreCase)
-                                          where string.Equals(buildConfigurationName, this.BuildConfigurationName, StringComparison.OrdinalIgnoreCase)
-                                          select buildConfigurationId;
+                                          let buildType = new BuildType(e)
+                                          where string.Equals(buildType.BuildConfigurationName, this.BuildConfigurationName, StringComparison.OrdinalIgnoreCase)
+                                          let match = new
+                                          {
+                                              BuildType = buildType,
+                                              Index = Array.FindIndex(buildType.ProjectNameParts, p => string.Equals(p, this.ProjectName, StringComparison.OrdinalIgnoreCase))
+                                          }
+                                          where match.Index > -1
+                                          orderby match.Index
+                                          select match.BuildType.BuildConfigurationId;
 
                 this.BuildConfigurationId = buildConfigurations.FirstOrDefault();
                 if (this.BuildConfigurationId == null)
@@ -145,6 +150,26 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 this.Logger.LogDebug("Build configuration ID resolved to: " + this.BuildConfigurationId);
             }
         }
+
+        private sealed class BuildType
+        {
+            public BuildType(XElement e)
+            {
+                this.BuildConfigurationId = (string)e.Attribute("id");
+                this.BuildConfigurationName = (string)e.Attribute("name");
+                this.ProjectName = (string)e.Attribute("projectName");
+                this.ProjectNameParts = this.ProjectName.Split(new[] { " :: " }, StringSplitOptions.None);
+            }
+            public string BuildConfigurationId { get; }
+            public string BuildConfigurationName { get; }
+            public string ProjectName { get; }
+            public string[] ProjectNameParts { get; }
+        }
+
+        //private static int IndexOfOrdinalIgnoreCase(string[] array, string value)
+        //{
+
+        //}
 
         private static string ParseBuildId(string getBuildResponse)
         {
