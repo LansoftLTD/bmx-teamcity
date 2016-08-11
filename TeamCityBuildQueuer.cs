@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -165,11 +164,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             public string ProjectName { get; }
             public string[] ProjectNameParts { get; }
         }
-
-        //private static int IndexOfOrdinalIgnoreCase(string[] array, string value)
-        //{
-
-        //}
 
         private static string ParseBuildId(string getBuildResponse)
         {
