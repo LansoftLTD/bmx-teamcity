@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Linq;
 using Inedo.BuildMaster.Extensibility;
 using Inedo.BuildMaster.Extensibility.Operations;
@@ -57,67 +56,50 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 await SetBuildConfigurationIdFromName().ConfigureAwait(false);
             }
 
-            if (this.BranchName != null)
-                this.Logger.LogDebug("Using branch: " + this.BranchName);
-
-            string triggerUrl = string.Format(
-                "action.html?add2Queue={0}{1}{2}",
-                this.BuildConfigurationId,
-                this.BranchName != null ? string.Format("&branchName={0}", Uri.EscapeDataString(this.BranchName)) : "",
-                this.AdditionalParameters);
-
             using (var client = new TeamCityWebClient(this.ConnectionInfo))
             {
-                this.Logger.LogDebug("Triggering build of configuration {0} at {1}", this.BuildConfigurationId, this.ConnectionInfo.GetApiUrl() + triggerUrl);
-                await client.DownloadStringTaskAsync(triggerUrl).ConfigureAwait(false);
+                this.Logger.LogDebug("Triggering build configuration {0}...", this.BuildConfigurationId);
+                if (this.BranchName != null)
+                    this.Logger.LogDebug("Using branch: " + this.BranchName);
 
-                this.Logger.LogInformation("Build of {0} was triggered successfully.", this.BuildConfigurationId);
+                var xdoc = new XDocument(
+                    new XElement("build",
+                        new XAttribute("branchName", this.BranchName),
+                        new XElement("buildType", new XAttribute("id", this.BuildConfigurationId))
+                    )
+                );
+                string response = await client.UploadStringTaskAsync("app/rest/buildQueue", xdoc.ToString(SaveOptions.DisableFormatting)).ConfigureAwait(false);
+                var status = new TeamCityBuildStatus(response);
+
+                this.Logger.LogInformation("Build of {0} was triggered successfully.", this.BuildConfigurationId);                
 
                 if (!this.WaitForCompletion)
                     return;
 
                 this.Logger.LogInformation("Waiting for build to complete...");
 
-                await Task.Delay(1000, cancellationToken).ConfigureAwait(false); // give TeamCity a second to create the build
-
-                string getLatestBuildUrl = string.Format("app/rest/builds?locator=buildType:{0},count:1,running:true{1}", this.BuildConfigurationId, this.BranchName != null ? ",branch:" + Uri.EscapeDataString(this.BranchName) : "");
-                string getLatestBuildResponse = await client.DownloadStringTaskAsync(getLatestBuildUrl).ConfigureAwait(false);
-                string latestBuildId = ParseBuildId(getLatestBuildResponse);
-                if (latestBuildId == null)
+                while (!status.Finished)
                 {
-                    this.Logger.LogError("BuildMaster has triggered a build in TeamCity, but TeamCity indicates that there are no builds running at this time, therefore BuildMaster cannot wait until the build completes.");
-                    return;
-                }
+                    string getBuildStatusResponse = await client.DownloadStringTaskAsync(status.Href).ConfigureAwait(false);
+                    status = new TeamCityBuildStatus(getBuildStatusResponse);
 
-                string getBuildStatusUrl = string.Format("app/rest/builds/id:{0}", latestBuildId);
-
-                TeamCityBuildStatus buildStatus;
-                do
-                {
-                    string getBuildStatusResponse = await client.DownloadStringTaskAsync(getBuildStatusUrl).ConfigureAwait(false);
-                    buildStatus = new TeamCityBuildStatus(getBuildStatusResponse);
-
-                    this.progressPercent = buildStatus.PercentComplete;
-                    this.progressMessage = $"Building {buildStatus.ProjectName} Build #{buildStatus.BuildNumber} ({buildStatus.PercentComplete}% Complete)";
+                    this.progressPercent = status.PercentageComplete;
+                    this.progressMessage = $"Building {status.ProjectName} Build #{status.Number} ({status.PercentageComplete}% Complete)";
 
                     if (logProgressToExecutionLog)
                         this.Logger.LogInformation(this.progressMessage);
 
-                    await Task.Delay(4 * 1000, cancellationToken).ConfigureAwait(false);
-
-                } while (buildStatus.IsRunning);
-
-                if (buildStatus.Status == TeamCityBuildStatus.BuildStatuses.Success)
-                {
-                    this.Logger.LogInformation("{0} build #{1} successful. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
+                    await Task.Delay(2000, cancellationToken).ConfigureAwait(false);
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
-                else if (buildStatus.Status == TeamCityBuildStatus.BuildStatuses.Failure)
+
+                if (status.Success)
                 {
-                    this.Logger.LogError("{0} build #{1} failed. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
+                    this.Logger.LogInformation("{0} build #{1} successful. TeamCity reports: {2}", status.ProjectName, status.Number, status.StatusText);
                 }
                 else
                 {
-                    this.Logger.LogError("{0} build #{1} encountered an error. TeamCity reports: {2}", buildStatus.ProjectName, buildStatus.BuildNumber, buildStatus.StatusText);
+                    this.Logger.LogError("{0} build #{1} failed or encountered an error. TeamCity reports: {2}", status.ProjectName, status.Number, status.StatusText);
                 }
             }
         }
@@ -165,73 +147,35 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             public string[] ProjectNameParts { get; }
         }
 
-        private static string ParseBuildId(string getBuildResponse)
-        {
-            #region XML Format...
-            /*
-             *  <builds count="1" nextHref="/httpAuth/app/rest/builds?locator=buildType:bt3,count:1,running:true&count=1&start=1">
-             *      <build id="27" number="16" running="true" percentageComplete="37" status="SUCCESS" buildTypeId="bt3" startDate="20120801T103949-0400" href="/httpAuth/app/rest/builds/id:27" webUrl="http://bmteamcitysv1/viewLog.html?buildId=27&buildTypeId=bt3"/>
-             *  </builds>
-             */
-            #endregion
-
-            var doc = new XmlDocument();
-            doc.LoadXml(getBuildResponse);
-
-            if (doc.SelectSingleNode("/builds/@count").Value == "0")
-                return null;
-
-            return doc.SelectSingleNode("/builds/build/@id").Value;
-        }
-
         private sealed class TeamCityBuildStatus
         {
-            public enum BuildStatuses { Success, Failure, Error }
+            public string Id { get; }
+            public string Number { get; }
+            public string Status { get; }
+            public string State { get; }
+            public string WebUrl { get; }
+            public string Href { get; }
+            public string WaitReason { get; }
+            public string StatusText { get; }
+            public string ProjectName { get; }
+            public int PercentageComplete { get; }
 
-            public string BuildNumber { get; private set; }
-            public BuildStatuses Status { get; private set; }
-            public string StatusText { get; private set; }
-            public bool IsRunning { get; private set; }
-            public int PercentComplete { get; private set; }
-            public string ProjectName { get; private set; }
+            public bool Success => string.Equals(this.Status, "success", StringComparison.OrdinalIgnoreCase);
+            public bool Finished => string.Equals(this.State, "finished", StringComparison.OrdinalIgnoreCase);
 
             public TeamCityBuildStatus(string getBuildStatusResponse)
             {
-                #region XML Format...
-                /*
-                 *  <build id="29" number="18" status="SUCCESS" href="/httpAuth/app/rest/builds/id:29" webUrl="http://bmteamcitysv1/viewLog.html?buildId=29&buildTypeId=bt3" personal="false" history="false" pinned="false" running="true">
-                 *      <running-info percentageComplete="2" elapsedSeconds="1" estimatedTotalSeconds="95" currentStageText="Checking for changes" outdated="false" probablyHanging="false"/>
-                 *      <statusText>Checking for changes</statusText>
-                 *      <buildType id="bt3" name="Build" href="/httpAuth/app/rest/buildTypes/id:bt3" projectName="BuildMaster" projectId="project3" webUrl="http://bmteamcitysv1/viewType.html?buildTypeId=bt3"/>
-                 *      <startDate>20120801T105524-0400</startDate>
-                 *      <agent href="/httpAuth/app/rest/agents/id:1" id="1" name="BMTEAMCITYSV1"/>
-                 *      <tags/>
-                 *      <properties>
-                 *          <property name="env.Configuration" value="Release"/>
-                 *      </properties>
-                 *      <snapshot-dependencies/>
-                 *      <artifact-dependencies/>
-                 *      <revisions/>
-                 *      <triggered date="20120801T105524-0400">
-                 *          <user href="/httpAuth/app/rest/users/id:1" id="1" name="Administrator" username="admin"/>
-                 *      </triggered>
-                 *      <changes count="0" href="/httpAuth/app/rest/changes?build=id:29"/>
-                 *  </build>
-                 */
-                #endregion
-
-                var doc = new XmlDocument();
-                doc.LoadXml(getBuildStatusResponse);
-
-                this.BuildNumber = doc.SelectSingleNode("/build/@number").Value;
-                this.Status = (BuildStatuses)Enum.Parse(typeof(BuildStatuses), doc.SelectSingleNode("/build/@status").Value, true);
-                this.StatusText = doc.SelectSingleNode("/build/statusText").InnerText;
-                var runningAttr = doc.SelectSingleNode("/build/@running");
-                this.IsRunning = runningAttr != null && bool.Parse(runningAttr.Value);
-                this.PercentComplete = this.IsRunning
-                    ? int.Parse(doc.SelectSingleNode("/build/running-info/@percentageComplete").Value)
-                    : 100;
-                this.ProjectName = doc.SelectSingleNode("/build/buildType/@projectName").Value;
+                var xdoc = XDocument.Parse(getBuildStatusResponse);
+                this.Id = (string)xdoc.Root.Attribute("id");
+                this.Number = (string)xdoc.Root.Attribute("number");
+                this.Status = (string)xdoc.Root.Attribute("status");
+                this.State = (string)xdoc.Root.Attribute("state");
+                this.WebUrl = (string)xdoc.Root.Attribute("webUrl");
+                this.Href = string.Join("/", xdoc.Root.Attribute("href").Value.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Skip(1));
+                this.WaitReason = (string)xdoc.Root.Element("waitReason") ?? "(none)";
+                this.StatusText = (string)xdoc.Root.Element("statusText") ?? "(none)";
+                this.ProjectName = (string)xdoc.Root.Element("buildType")?.Attribute("projectName");
+                this.PercentageComplete = this.Finished ? 100 : ((int?)xdoc.Root.Attribute("percentageComplete") ?? 0);
             }
         }
     }
