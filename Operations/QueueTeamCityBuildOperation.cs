@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Inedo.BuildMaster;
 using Inedo.BuildMaster.Extensibility;
 using Inedo.BuildMaster.Extensibility.Operations;
+using Inedo.BuildMaster.Web.Controls;
 using Inedo.Diagnostics;
 using Inedo.Documentation;
 
@@ -12,20 +13,28 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
     [Description("Queues a build in TeamCity, optionally waiting for its completion.")]
     [ScriptAlias("Queue-Build")]
     [Tag(Tags.Builds)]
+    [Tag("teamcity")]
     public sealed class QueueTeamCityBuildOperation : TeamCityOperation
     {
         private TeamCityBuildQueuer buildQueuer;
 
+        [ScriptAlias("Credentials")]
+        [DisplayName("Credentials")]
+        public override string CredentialName { get; set; }
+
         [Required]
         [ScriptAlias("Project")]
         [DisplayName("Project name")]
+        [SuggestibleValue(typeof(ProjectNameSuggestionProvider))]
         public string ProjectName { get; set; }
         [Required]
         [ScriptAlias("BuildConfiguration")]
         [DisplayName("Build configuration")]
+        [SuggestibleValue(typeof(BuildConfigurationNameSuggestionProvider))]
         public string BuildConfigurationName { get; set; }
         [ScriptAlias("Branch")]
         [DisplayName("Branch name")]
+        [PlaceholderText("Default")]
         public string BranchName { get; set; }
 
         [Category("Advanced")]

@@ -8,6 +8,7 @@ using Inedo.Agents;
 using Inedo.BuildMaster;
 using Inedo.BuildMaster.Artifacts;
 using Inedo.BuildMaster.Extensibility;
+using Inedo.BuildMaster.Extensibility.Agents;
 using Inedo.BuildMaster.Files;
 using Inedo.Diagnostics;
 using Inedo.ExecutionEngine.Executer;
@@ -91,17 +92,19 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 }
 
                 this.Logger.LogInformation("Importing artifact into BuildMaster...");
-                ArtifactBuilder.ImportZip(
-                    new ArtifactIdentifier(
-                        (int)this.Context.ApplicationId,
-                        this.Context.ReleaseNumber,
-                        this.Context.BuildNumber,
-                        this.Context.DeployableId,
-                        TrimWhitespaceAndZipExtension(this.ArtifactName)
-                    ),
-                    Util.Agents.CreateLocalAgent().GetService<IFileOperationsExecuter>(),
-                    new FileEntryInfo(this.ArtifactName, tempFile)
-                );
+                using (var file = File.OpenRead(tempFile))
+                {
+                    await Artifact.CreateArtifactAsync(
+                        applicationId: (int)this.Context.ApplicationId,
+                        releaseNumber: this.Context.ReleaseNumber,
+                        buildNumber: this.Context.BuildNumber,
+                        deployableId: this.Context.DeployableId,
+                        executionId: this.Context.ExecutionId,
+                        artifactName: TrimWhitespaceAndZipExtension(this.ArtifactName),
+                        artifactData: file,
+                        overwrite: true
+                    );
+                }
             }
             finally
             {

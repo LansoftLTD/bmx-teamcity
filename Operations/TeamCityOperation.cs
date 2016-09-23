@@ -9,10 +9,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
 {
     public abstract class TeamCityOperation : ExecuteOperation, IHasCredentials<TeamCityCredentials>, ITeamCityConnectionInfo
     {
-        [Category("Connection/Identity")]
-        [ScriptAlias("Credentials")]
-        [DisplayName("Credentials")]
-        public string CredentialName { get; set; }
+        public abstract string CredentialName { get; set; }
 
         [Category("Connection/Identity")]
         [ScriptAlias("Server")]

@@ -4,6 +4,7 @@ using Inedo.BuildMaster;
 using Inedo.BuildMaster.Data;
 using Inedo.BuildMaster.Extensibility;
 using Inedo.BuildMaster.Extensibility.Operations;
+using Inedo.BuildMaster.Web.Controls;
 using Inedo.Diagnostics;
 using Inedo.Documentation;
 
@@ -13,30 +14,44 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
     [Description("Downloads an artifact from the specified TeamCity server and saves it to the artifact library.")]
     [ScriptAlias("Import-Artifact")]
     [Tag(Tags.Artifacts)]
+    [Tag("teamcity")]
     public sealed class ImportTeamCityArtifactOperation : TeamCityOperation
     {
-        [Required]
-        [ScriptAlias("Artifact")]
-        [DisplayName("Artifact name")]
-        public string ArtifactName { get; set; }
+        [ScriptAlias("Credentials")]
+        [DisplayName("Credentials")]
+        public override string CredentialName { get; set; }
+
         [Required]
         [ScriptAlias("Project")]
         [DisplayName("Project name")]
+        [SuggestibleValue(typeof(ProjectNameSuggestionProvider))]
         public string ProjectName { get; set; }
         [Required]
         [ScriptAlias("BuildConfiguration")]
         [DisplayName("Build configuration")]
+        [SuggestibleValue(typeof(BuildConfigurationNameSuggestionProvider))]
         public string BuildConfigurationName { get; set; }
         [ScriptAlias("BuildNumber")]
         [DisplayName("Build number")]
         [DefaultValue("lastSuccessful")]
         [PlaceholderText("lastSuccessful")]
         [Description("The build number may be a specific build number, or a special value such as \"lastSuccessful\", \"lastFinished\", or \"lastPinned\".")]
+        [SuggestibleValue(typeof(BuildNumberSuggestionProvider))]
         public string BuildNumber { get; set; }
+        [Required]
+        [ScriptAlias("Artifact")]
+        [DisplayName("Artifact name")]
+        public string ArtifactName { get; set; }
         [ScriptAlias("Branch")]
         [DisplayName("Branch")]
         [PlaceholderText("Default")]
-        public string BranchName { get; set; }        
+        public string BranchName { get; set; }
+        [Output]
+        [ScriptAlias("TeamCityBuildNumber")]
+        [DisplayName("Set build number to variable")]
+        [Description("The TeamCity build number can be output into a runtime variable")]
+        [PlaceholderText("e.g. $TeamCityBuildNumber")]
+        public string TeamCityBuildNumber { get; set; }
 
         public async override Task ExecuteAsync(IOperationExecutionContext context)
         {
@@ -49,25 +64,9 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
                 BuildNumber = this.BuildNumber
             };
 
-            string teamCityBuildNumber = await importer.ImportAsync().ConfigureAwait(false);
+            this.TeamCityBuildNumber = await importer.ImportAsync().ConfigureAwait(false);
 
-            this.LogDebug("TeamCity build number resolved to {0}, creating $TeamCityBuildNumber variable...", teamCityBuildNumber);
-
-            await new DB.Context(false).Variables_CreateOrUpdateVariableDefinitionAsync(
-                "TeamCityBuildNumber",
-                Application_Id: context.ApplicationId,
-                Release_Number: context.ReleaseNumber,
-                Build_Number: context.BuildNumber,
-                Value_Text: teamCityBuildNumber,
-                Sensitive_Indicator: false,
-                Environment_Id: null,
-                ServerRole_Id: null,
-                Server_Id: null,
-                ApplicationGroup_Id: null,
-                Execution_Id: null,
-                Promotion_Id: null,
-                Deployable_Id: null
-            ).ConfigureAwait(false);
+            this.LogInformation($"TeamCity build number \"{this.TeamCityBuildNumber}\" imported.");
         }
 
         protected override ExtendedRichDescription GetDescription(IOperationConfiguration config)

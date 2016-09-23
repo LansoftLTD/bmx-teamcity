@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Inedo.BuildMasterExtensions.TeamCity
 {
@@ -20,10 +24,74 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             }
         }
 
+        public async Task<XDocument> DownloadXDocumentAsync(string url)
+        {
+            var xml = await this.DownloadStringTaskAsync(url).ConfigureAwait(false);
+            return XDocument.Parse(xml);
+        }
+
+        public async Task<IList<string>> GetProjectNamesAsync()
+        {
+            var xdoc = await this.DownloadXDocumentAsync("app/rest/projects").ConfigureAwait(false);
+
+            return xdoc
+                .Element("projects")
+                .Elements("project")
+                .Select(e => (string)e.Attribute("name"))
+                .ToList();
+        }
+        public async Task<IList<string>> GetBuildTypeNamesAsync(string projectName)
+        {
+            var xdoc = await this.DownloadXDocumentAsync("app/rest/buildTypes").ConfigureAwait(false);
+
+            return xdoc
+                .Element("buildTypes")
+                .Elements("buildType")
+                .Where(e => string.Equals(projectName, (string)e.Attribute("projectName"), StringComparison.OrdinalIgnoreCase))
+                .Select(e => (string)e.Attribute("name"))
+                .ToList();
+        }
+
+        public async Task<IList<TeamCityBuildConfiguration>> GetBuildTypesAsync()
+        {
+            var xdoc = await this.DownloadXDocumentAsync("app/rest/buildTypes").ConfigureAwait(false);
+
+            return xdoc
+                .Element("buildTypes")
+                .Elements("buildType")
+                .Select(e => new TeamCityBuildConfiguration
+                {
+                    Id = (string)e.Attribute("id"),
+                    Project = (string)e.Attribute("projectName"),
+                    Name = (string)e.Attribute("name")
+                })
+                .ToList();
+        }
+        public async Task<IList<string>> GetBuildNumbersAsync(string projectName, string buildConfigurationName)
+        {
+            var builtInTypes = new[] { "lastSuccessful", "lastPinned", "lastFinished" };
+
+            var buildTypes = await this.GetBuildTypesAsync().ConfigureAwait(false);
+            var buildTypeId = buildTypes
+                .FirstOrDefault(c => string.Equals(projectName, c.Project, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(buildConfigurationName, c.Name, StringComparison.OrdinalIgnoreCase))
+                ?.Id;
+            if (string.IsNullOrEmpty(buildTypeId))
+                return builtInTypes;
+
+            var xdoc = await this.DownloadXDocumentAsync($"app/rest/buildTypes/id:{Uri.EscapeDataString(buildTypeId)}/builds").ConfigureAwait(false);
+            var buildNumbers = xdoc
+                .Element("builds")
+                .Elements("build")
+                .Select(e => (string)e.Attribute("number"));
+
+            return builtInTypes.Concat(buildNumbers).ToList();
+        }
+
         protected override WebRequest GetWebRequest(Uri address)
         {
             var request = base.GetWebRequest(address);
-
+            
             if (request.Method == "POST")
                 request.ContentType = "application/xml";
 
