@@ -21,6 +21,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         public string BranchName { get; set; }
         public bool WaitForCompletion { get; set; }
         public string AdditionalParameters { get; set; }
+        public string BuildProperties { get; set; }
 
         public ITeamCityConnectionInfo ConnectionInfo { get; }
         public ILogger Logger { get; }
@@ -68,6 +69,18 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                         new XElement("buildType", new XAttribute("id", this.BuildConfigurationId))
                     )
                 );
+
+                if (!string.IsNullOrEmpty(this.BuildProperties))
+                {
+                    xdoc.Element("build").Add(new XElement("properties"));
+                    string[] KeyValuePairs = this.BuildProperties.Split('&');
+                    foreach(string pair in KeyValuePairs)
+                    {
+                        string[] parts = pair.Split('=');
+                        xdoc.Element("build").Element("properties").Add(new XElement("property", new XAttribute("name", parts[0]), new XAttribute("value", parts[1])));
+                    }
+                }
+                
                 string response = await client.UploadStringTaskAsync("app/rest/buildQueue", xdoc.ToString(SaveOptions.DisableFormatting)).ConfigureAwait(false);
                 var status = new TeamCityBuildStatus(response);
 

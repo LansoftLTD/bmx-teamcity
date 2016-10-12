@@ -43,6 +43,14 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
         [Description("Optionally enter any additional parameters accepted by the TeamCity API in query string format, for example:<br/> "
             + "&amp;name=agent&amp;value=&lt;agentnamevalue&gt;&amp;name=system.name&amp;value=&lt;systemnamevalue&gt;..")]
         public string AdditionalParameters { get; set; }
+
+        [Category("Advanced")]
+        [ScriptAlias("BuildProperties")]
+        [DisplayName("Build properties")]
+        [Description("Optionally enter any parameters accepted by the specified build configuration in query string format, for example:<br/> "
+            + "name=agent&amp;value=&lt;agentnamevalue&gt;&amp;name=system.name&amp;value=&lt;systemnamevalue&gt;..")]
+        public string BuildProperties { get; set; }
+
         [Category("Advanced")]
         [ScriptAlias("WaitForCompletion")]
         [DisplayName("Wait for completion")]
@@ -57,6 +65,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
                 ProjectName = this.ProjectName,
                 BuildConfigurationName = this.BuildConfigurationName,
                 AdditionalParameters = this.AdditionalParameters,
+                BuildProperties = this.BuildProperties,
                 WaitForCompletion = this.WaitForCompletion,
                 BranchName = this.BranchName == null ? "" : this.BranchName
             };
