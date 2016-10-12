@@ -58,7 +58,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
                 BuildConfigurationName = this.BuildConfigurationName,
                 AdditionalParameters = this.AdditionalParameters,
                 WaitForCompletion = this.WaitForCompletion,
-                BranchName = this.BranchName
+                BranchName = this.BranchName == null ? "" : this.BranchName
             };
 
             return this.buildQueuer.QueueBuildAsync(context.CancellationToken, logProgressToExecutionLog: false);

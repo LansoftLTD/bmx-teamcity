@@ -59,7 +59,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             using (var client = new TeamCityWebClient(this.ConnectionInfo))
             {
                 this.Logger.LogDebug("Triggering build configuration {0}...", this.BuildConfigurationId);
-                if (this.BranchName != null)
+                if (!string.IsNullOrEmpty(this.BranchName))
                     this.Logger.LogDebug("Using branch: " + this.BranchName);
 
                 var xdoc = new XDocument(
