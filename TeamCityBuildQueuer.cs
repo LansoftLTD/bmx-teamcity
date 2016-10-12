@@ -65,11 +65,15 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
                 var xdoc = new XDocument(
                     new XElement("build",
-                        new XAttribute("branchName", this.BranchName),
                         new XElement("buildType", new XAttribute("id", this.BuildConfigurationId))
                     )
                 );
 
+                if (!string.IsNullOrEmpty(this.BranchName))
+                {
+                    xdoc.Element("build").Add(new XAttribute("branchName", this.BranchName));
+                }
+                
                 if (!string.IsNullOrEmpty(this.BuildProperties))
                 {
                     xdoc.Element("build").Add(new XElement("properties"));
