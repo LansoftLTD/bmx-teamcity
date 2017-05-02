@@ -175,12 +175,16 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 string result = await client.DownloadStringTaskAsync("app/rest/buildTypes").ConfigureAwait(false);
                 var doc = XDocument.Parse(result);
                 var buildConfigurations = from e in doc.Element("buildTypes").Elements("buildType")
-                                          let buildConfigurationId = (string)e.Attribute("id")
-                                          let projectName = (string)e.Attribute("projectName")
-                                          let buildConfigurationName = (string)e.Attribute("name")
-                                          where string.Equals(projectName, this.ProjectName, StringComparison.OrdinalIgnoreCase)
-                                          where string.Equals(buildConfigurationName, this.BuildConfigurationName, StringComparison.OrdinalIgnoreCase)
-                                          select buildConfigurationId;
+                                          let buildType = new BuildType(e)
+                                          where string.Equals(buildType.BuildConfigurationName, this.BuildConfigurationName, StringComparison.OrdinalIgnoreCase)
+                                          let match = new
+                                          {
+                                              BuildType = buildType,
+                                              Index = Array.FindIndex(buildType.ProjectNameParts, p => string.Equals(p, this.ProjectName, StringComparison.OrdinalIgnoreCase))
+                                          }
+                                          where match.Index > -1
+                                          orderby match.Index
+                                          select match.BuildType.BuildConfigurationId;
                 
                 this.BuildConfigurationId = buildConfigurations.FirstOrDefault();
                 if (this.BuildConfigurationId == null)
