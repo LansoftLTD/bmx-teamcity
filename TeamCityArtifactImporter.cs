@@ -4,12 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Inedo.Agents;
-using Inedo.BuildMaster;
 using Inedo.BuildMaster.Artifacts;
 using Inedo.BuildMaster.Extensibility;
-using Inedo.BuildMaster.Extensibility.Agents;
-using Inedo.BuildMaster.Files;
 using Inedo.Diagnostics;
 using Inedo.ExecutionEngine.Executer;
 using Inedo.IO;
@@ -31,17 +27,13 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         public TeamCityArtifactImporter(ITeamCityConnectionInfo connectionInfo, ILogger logger, IGenericBuildMasterContext context)
         {
-            if (connectionInfo == null)
-                throw new ArgumentNullException(nameof(connectionInfo));
-            if (logger == null)
-                throw new ArgumentNullException(nameof(logger));
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
             if (context.ApplicationId == null)
                 throw new InvalidOperationException("context requires a valid application ID");
 
-            this.ConnectionInfo = connectionInfo;
-            this.Logger = logger;
+            this.ConnectionInfo = connectionInfo ?? throw new ArgumentNullException(nameof(connectionInfo));
+            this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.Context = context;
         }
 
@@ -49,9 +41,16 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             this.Logger.LogInformation($"Importing artifact \"{this.ArtifactName}\" from TeamCity...");
 
-            if (this.BuildConfigurationName != null && this.ProjectName != null && this.BuildConfigurationId == null)
+            if (this.BuildConfigurationId == null)
             {
-                await SetBuildConfigurationIdFromName().ConfigureAwait(false);
+                if (this.BuildConfigurationName != null && this.ProjectName != null)
+                {
+                    await SetBuildConfigurationIdFromName().ConfigureAwait(false);
+                }
+                else
+                {
+                    throw new ExecutionFailureException("If BuildConfigurationId is not specified directly, a project name and configuration name are required.");
+                }
             }
 
             if (string.IsNullOrEmpty(this.BuildNumber))

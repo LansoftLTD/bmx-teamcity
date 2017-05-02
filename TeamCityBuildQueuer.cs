@@ -28,17 +28,13 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         public TeamCityBuildQueuer(ITeamCityConnectionInfo connectionInfo, ILogger logger, IGenericBuildMasterContext context)
         {
-            if (connectionInfo == null)
-                throw new ArgumentNullException(nameof(connectionInfo));
-            if (logger == null)
-                throw new ArgumentNullException(nameof(logger));
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
             if (context.ApplicationId == null)
                 throw new InvalidOperationException("context requires a valid application ID");
 
-            this.ConnectionInfo = connectionInfo;
-            this.Logger = logger;
+            this.ConnectionInfo = connectionInfo ?? throw new ArgumentNullException(nameof(connectionInfo));
+            this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.Context = context;
         }
 
@@ -132,21 +128,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
             }
         }
 
-        private sealed class BuildType
-        {
-            public BuildType(XElement e)
-            {
-                this.BuildConfigurationId = (string)e.Attribute("id");
-                this.BuildConfigurationName = (string)e.Attribute("name");
-                this.ProjectName = (string)e.Attribute("projectName");
-                this.ProjectNameParts = this.ProjectName.Split(new[] { " :: " }, StringSplitOptions.None);
-            }
-            public string BuildConfigurationId { get; }
-            public string BuildConfigurationName { get; }
-            public string ProjectName { get; }
-            public string[] ProjectNameParts { get; }
-        }
-
         private sealed class TeamCityBuildStatus
         {
             public string Id { get; }
@@ -178,5 +159,20 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 this.PercentageComplete = this.Finished ? 100 : ((int?)xdoc.Root.Attribute("percentageComplete") ?? 0);
             }
         }
+    }
+
+    internal sealed class BuildType
+    {
+        public BuildType(XElement e)
+        {
+            this.BuildConfigurationId = (string)e.Attribute("id");
+            this.BuildConfigurationName = (string)e.Attribute("name");
+            this.ProjectName = (string)e.Attribute("projectName");
+            this.ProjectNameParts = this.ProjectName.Split(new[] { " :: " }, StringSplitOptions.None);
+        }
+        public string BuildConfigurationId { get; }
+        public string BuildConfigurationName { get; }
+        public string ProjectName { get; }
+        public string[] ProjectNameParts { get; }
     }
 }
