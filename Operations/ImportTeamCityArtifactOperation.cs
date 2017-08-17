@@ -21,16 +21,20 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
         [DisplayName("Credentials")]
         public override string CredentialName { get; set; }
 
-        [Required]
         [ScriptAlias("Project")]
         [DisplayName("Project name")]
         [SuggestibleValue(typeof(ProjectNameSuggestionProvider))]
         public string ProjectName { get; set; }
-        [Required]
         [ScriptAlias("BuildConfiguration")]
         [DisplayName("Build configuration")]
         [SuggestibleValue(typeof(BuildConfigurationNameSuggestionProvider))]
         public string BuildConfigurationName { get; set; }
+
+        [ScriptAlias("BuildConfigurationId")]
+        [DisplayName("Build configuration ID")]
+        [Description("TeamCity identifier that targets a single build configuration. May be specified instead of the Project name and Build configuration name.")]
+        public string BuildConfigurationId { get; set; }
+
         [ScriptAlias("BuildNumber")]
         [DisplayName("Build number")]
         [DefaultValue("lastSuccessful")]
@@ -59,6 +63,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity.Operations
             {
                 ArtifactName = this.ArtifactName,
                 ProjectName = this.ProjectName,
+                BuildConfigurationId = this.BuildConfigurationId,
                 BuildConfigurationName = this.BuildConfigurationName,
                 BranchName = this.BranchName,
                 BuildNumber = this.BuildNumber

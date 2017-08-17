@@ -4,12 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Inedo.Agents;
-using Inedo.BuildMaster;
 using Inedo.BuildMaster.Artifacts;
 using Inedo.BuildMaster.Extensibility;
-using Inedo.BuildMaster.Extensibility.Agents;
-using Inedo.BuildMaster.Files;
 using Inedo.Diagnostics;
 using Inedo.ExecutionEngine.Executer;
 using Inedo.IO;
@@ -31,17 +27,13 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         public TeamCityArtifactImporter(ITeamCityConnectionInfo connectionInfo, ILogger logger, IGenericBuildMasterContext context)
         {
-            if (connectionInfo == null)
-                throw new ArgumentNullException(nameof(connectionInfo));
-            if (logger == null)
-                throw new ArgumentNullException(nameof(logger));
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
             if (context.ApplicationId == null)
                 throw new InvalidOperationException("context requires a valid application ID");
 
-            this.ConnectionInfo = connectionInfo;
-            this.Logger = logger;
+            this.ConnectionInfo = connectionInfo ?? throw new ArgumentNullException(nameof(connectionInfo));
+            this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.Context = context;
         }
 
@@ -49,9 +41,16 @@ namespace Inedo.BuildMasterExtensions.TeamCity
         {
             this.Logger.LogInformation($"Importing artifact \"{this.ArtifactName}\" from TeamCity...");
 
-            if (this.BuildConfigurationName != null && this.ProjectName != null && this.BuildConfigurationId == null)
+            if (this.BuildConfigurationId == null)
             {
-                await SetBuildConfigurationIdFromName().ConfigureAwait(false);
+                if (this.BuildConfigurationName != null && this.ProjectName != null)
+                {
+                    await SetBuildConfigurationIdFromName().ConfigureAwait(false);
+                }
+                else
+                {
+                    throw new ExecutionFailureException("If BuildConfigurationId is not specified directly, a project name and configuration name are required.");
+                }
             }
 
             if (string.IsNullOrEmpty(this.BuildNumber))
@@ -175,12 +174,16 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 string result = await client.DownloadStringTaskAsync("app/rest/buildTypes").ConfigureAwait(false);
                 var doc = XDocument.Parse(result);
                 var buildConfigurations = from e in doc.Element("buildTypes").Elements("buildType")
-                                          let buildConfigurationId = (string)e.Attribute("id")
-                                          let projectName = (string)e.Attribute("projectName")
-                                          let buildConfigurationName = (string)e.Attribute("name")
-                                          where string.Equals(projectName, this.ProjectName, StringComparison.OrdinalIgnoreCase)
-                                          where string.Equals(buildConfigurationName, this.BuildConfigurationName, StringComparison.OrdinalIgnoreCase)
-                                          select buildConfigurationId;
+                                          let buildType = new BuildType(e)
+                                          where string.Equals(buildType.BuildConfigurationName, this.BuildConfigurationName, StringComparison.OrdinalIgnoreCase)
+                                          let match = new
+                                          {
+                                              BuildType = buildType,
+                                              Index = Array.FindIndex(buildType.ProjectNameParts, p => string.Equals(p, this.ProjectName, StringComparison.OrdinalIgnoreCase))
+                                          }
+                                          where match.Index > -1
+                                          orderby match.Index
+                                          select match.BuildType.BuildConfigurationId;
                 
                 this.BuildConfigurationId = buildConfigurations.FirstOrDefault();
                 if (this.BuildConfigurationId == null)

@@ -29,17 +29,13 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
         public TeamCityBuildQueuer(ITeamCityConnectionInfo connectionInfo, ILogger logger, IGenericBuildMasterContext context)
         {
-            if (connectionInfo == null)
-                throw new ArgumentNullException(nameof(connectionInfo));
-            if (logger == null)
-                throw new ArgumentNullException(nameof(logger));
             if (context == null)
                 throw new ArgumentNullException(nameof(context));
             if (context.ApplicationId == null)
                 throw new InvalidOperationException("context requires a valid application ID");
 
-            this.ConnectionInfo = connectionInfo;
-            this.Logger = logger;
+            this.ConnectionInfo = connectionInfo ?? throw new ArgumentNullException(nameof(connectionInfo));
+            this.Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.Context = context;
         }
 
@@ -65,6 +61,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
                 var xdoc = new XDocument(
                     new XElement("build",
+                        new XAttribute("branchName", this.BranchName ?? ""),
                         new XElement("buildType", new XAttribute("id", this.BuildConfigurationId))
                     )
                 );
@@ -73,7 +70,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 {
                     xdoc.Element("build").Add(new XAttribute("branchName", this.BranchName));
                 }
-                
+
                 if (!string.IsNullOrEmpty(this.BuildProperties))
                 {
                     xdoc.Element("build").Add(new XElement("properties"));
@@ -84,11 +81,11 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                         xdoc.Element("build").Element("properties").Add(new XElement("property", new XAttribute("name", parts[0]), new XAttribute("value", parts[1])));
                     }
                 }
-                
+
                 string response = await client.UploadStringTaskAsync("app/rest/buildQueue", xdoc.ToString(SaveOptions.DisableFormatting)).ConfigureAwait(false);
                 var status = new TeamCityBuildStatus(response);
 
-                this.Logger.LogInformation("Build of {0} was triggered successfully.", this.BuildConfigurationId);                
+                this.Logger.LogInformation("Build of {0} was triggered successfully.", this.BuildConfigurationId);
 
                 if (!this.WaitForCompletion)
                     return;
@@ -137,7 +134,7 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                                               BuildType = buildType,
                                               Index = Array.FindIndex(buildType.ProjectNameParts, p => string.Equals(p, this.ProjectName, StringComparison.OrdinalIgnoreCase))
                                           }
-                                          where match.Index > -1
+                                          where match.Index > -1 || string.Equals(match.BuildType.ProjectName, this.ProjectName, StringComparison.OrdinalIgnoreCase)
                                           orderby match.Index
                                           select match.BuildType.BuildConfigurationId;
 
@@ -147,21 +144,6 @@ namespace Inedo.BuildMasterExtensions.TeamCity
 
                 this.Logger.LogDebug("Build configuration ID resolved to: " + this.BuildConfigurationId);
             }
-        }
-
-        private sealed class BuildType
-        {
-            public BuildType(XElement e)
-            {
-                this.BuildConfigurationId = (string)e.Attribute("id");
-                this.BuildConfigurationName = (string)e.Attribute("name");
-                this.ProjectName = (string)e.Attribute("projectName");
-                this.ProjectNameParts = this.ProjectName.Split(new[] { " :: " }, StringSplitOptions.None);
-            }
-            public string BuildConfigurationId { get; }
-            public string BuildConfigurationName { get; }
-            public string ProjectName { get; }
-            public string[] ProjectNameParts { get; }
         }
 
         private sealed class TeamCityBuildStatus
@@ -195,5 +177,20 @@ namespace Inedo.BuildMasterExtensions.TeamCity
                 this.PercentageComplete = this.Finished ? 100 : ((int?)xdoc.Root.Attribute("percentageComplete") ?? 0);
             }
         }
+    }
+
+    internal sealed class BuildType
+    {
+        public BuildType(XElement e)
+        {
+            this.BuildConfigurationId = (string)e.Attribute("id");
+            this.BuildConfigurationName = (string)e.Attribute("name");
+            this.ProjectName = (string)e.Attribute("projectName");
+            this.ProjectNameParts = this.ProjectName.Split(new[] { " :: " }, StringSplitOptions.None);
+        }
+        public string BuildConfigurationId { get; }
+        public string BuildConfigurationName { get; }
+        public string ProjectName { get; }
+        public string[] ProjectNameParts { get; }
     }
 }
